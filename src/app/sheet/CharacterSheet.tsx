@@ -13,6 +13,7 @@ import { CarryTypeMenu } from "./CarryTypeMenu";
 import { FeatsPanel } from "./FeatsPanel";
 import { ProfsPanel } from "./ProfsPanel";
 import { BioPanel } from "./BioPanel";
+import { BreakdownModal, type BreakdownRequest } from "./BreakdownModal";
 import { setHeroPoints, adjustCondition, toggleCondition, setHp, setTempHp, applyDamageTo, setInitiativeStatistic, setShieldHp, setEquipped, setInvested } from "../../foundry/actor/mutations";
 import { hpAfterHeal, hpClamped } from "../../foundry/actor/hp";
 
@@ -35,6 +36,7 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
   const [hpOpen, setHpOpen] = useState(false);
   const [condOpen, setCondOpen] = useState(false);
   const [equipItemId, setEquipItemId] = useState<string | null>(null);
+  const [breakdown, setBreakdown] = useState<BreakdownRequest | null>(null);
   const onHpSubmit = useCallback((mode: HpMode, amount: number) => {
     if (!view) return;
     if (mode === "damage") applyDamageTo(actorId, amount);
@@ -72,9 +74,10 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
               onInitiativeChange={(stat) => setInitiativeStatistic(actorId, stat)}
               onShieldHpAdjust={(dlt) => view.defenses.shield && setShieldHp(actorId, hpClamped(view.defenses.shield.hp.value + dlt, view.defenses.shield.hp.max))}
               onManageConditions={() => setCondOpen(true)}
+              onShowBreakdown={setBreakdown}
             />
           )}
-          {subTab === "skills" && <SkillsPanel view={view} />}
+          {subTab === "skills" && <SkillsPanel view={view} onShowBreakdown={setBreakdown} />}
           {subTab === "items" && (
             <ItemsPanel
               view={view}
@@ -105,6 +108,7 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
           onClose={() => setEquipItemId(null)}
         />
       )}
+      {breakdown && <BreakdownModal req={breakdown} onClose={() => setBreakdown(null)} />}
     </>
   );
 }

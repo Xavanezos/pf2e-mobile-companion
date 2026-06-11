@@ -3,6 +3,7 @@ import type { CharacterView } from "../../foundry/actor/types";
 import { StatRow } from "./parts/StatRow";
 import { RankPip } from "./parts/RankPip";
 import { Chip } from "./parts/Chip";
+import type { BreakdownRequest } from "./BreakdownModal";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -14,11 +15,12 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 const sign = (n: number) => `${n >= 0 ? "+" : ""}${n}`;
 
-export function VitalsPanel({ view, onInitiativeChange, onShieldHpAdjust, onManageConditions }: {
+export function VitalsPanel({ view, onInitiativeChange, onShieldHpAdjust, onManageConditions, onShowBreakdown }: {
   view: CharacterView;
   onInitiativeChange: (statistic: string) => void;
   onShieldHpAdjust: (delta: 1 | -1) => void;
   onManageConditions: () => void;
+  onShowBreakdown: (req: BreakdownRequest) => void;
 }) {
   const d = view.defenses;
   const b = view.bio;
@@ -37,9 +39,9 @@ export function VitalsPanel({ view, onInitiativeChange, onShieldHpAdjust, onMana
       )}
 
       <Section title="Defenses">
-        <StatRow label="Armor Class" value={d.ac} />
-        {d.saves.map((s) => <StatRow key={s.slug} label={s.label} value={sign(s.mod)} right={<RankPip rank={s.rank} />} />)}
-        <StatRow label="Perception" value={sign(d.perception.mod)} right={<RankPip rank={d.perception.rank} />} />
+        <StatRow label="Armor Class" value={d.ac} onClick={d.acBreakdown ? () => onShowBreakdown({ title: "Armor Class", total: d.ac, parts: d.acBreakdown!, totalSigned: false }) : undefined} />
+        {d.saves.map((s) => <StatRow key={s.slug} label={s.label} value={sign(s.mod)} right={<RankPip rank={s.rank} />} onClick={s.breakdown ? () => onShowBreakdown({ title: s.label, total: s.mod, parts: s.breakdown! }) : undefined} />)}
+        <StatRow label="Perception" value={sign(d.perception.mod)} right={<RankPip rank={d.perception.rank} />} onClick={d.perception.breakdown ? () => onShowBreakdown({ title: "Perception", total: d.perception.mod, parts: d.perception.breakdown! }) : undefined} />
         {d.perception.senses.length > 0 && (
           <div className="px-1 pb-2 text-xs text-zinc-400">Senses: {d.perception.senses.map((x) => x.label).join(", ")}</div>
         )}
@@ -78,7 +80,7 @@ export function VitalsPanel({ view, onInitiativeChange, onShieldHpAdjust, onMana
       )}
 
       {d.classDCs.length > 0 && (
-        <Section title="Class DC">{d.classDCs.map((c) => <StatRow key={c.slug} label={c.label} value={c.value} right={c.primary ? <span className="text-[10px] text-zinc-500">primary</span> : null} />)}</Section>
+        <Section title="Class DC">{d.classDCs.map((c) => <StatRow key={c.slug} label={c.label} value={c.value} right={c.primary ? <span className="text-[10px] text-zinc-500">primary</span> : null} onClick={c.breakdown ? () => onShowBreakdown({ title: c.label, total: c.value, parts: c.breakdown!, totalSigned: false }) : undefined} />)}</Section>
       )}
 
       <Section title="Abilities">

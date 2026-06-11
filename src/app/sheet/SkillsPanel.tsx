@@ -1,10 +1,11 @@
 import type { CharacterView } from "../../foundry/actor/types";
 import { StatRow } from "./parts/StatRow";
 import { RankPip } from "./parts/RankPip";
+import type { BreakdownRequest } from "./BreakdownModal";
 
 const sign = (n: number) => `${n >= 0 ? "+" : ""}${n}`;
 
-export function SkillsPanel({ view }: { view: CharacterView }) {
+export function SkillsPanel({ view, onShowBreakdown }: { view: CharacterView; onShowBreakdown: (req: BreakdownRequest) => void }) {
   return (
     <div className="divide-y divide-zinc-800 px-3">
       {view.skills.map((s) => (
@@ -19,6 +20,7 @@ export function SkillsPanel({ view }: { view: CharacterView }) {
           }
           value={sign(s.mod)}
           right={<RankPip rank={s.rank} />}
+          onClick={s.breakdown ? () => onShowBreakdown({ title: s.label, total: s.mod, parts: s.breakdown! }) : undefined}
         />
       ))}
     </div>
