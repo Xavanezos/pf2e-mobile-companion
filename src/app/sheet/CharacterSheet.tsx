@@ -1,10 +1,12 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useAppStore } from "../store";
 import { useActor } from "../useActor";
 import { useFoundryHook } from "../useFoundryHook";
 import { VitalsHeader } from "./VitalsHeader";
 import { SubTabBar } from "./SubTabBar";
-import { setHeroPoints, adjustCondition } from "../../foundry/actor/mutations";
+import { HpNumpad, type HpMode } from "./HpNumpad";
+import { setHeroPoints, adjustCondition, setHp, setTempHp, applyDamageTo } from "../../foundry/actor/mutations";
+import { hpAfterHeal, hpClamped } from "../../foundry/actor/hp";
 
 function PanelStub({ name }: { name: string }) {
   return <div className="p-4 text-sm text-zinc-500">{name} panel — coming in a later task.</div>;
@@ -26,28 +28,42 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
   const onDyingAdjust = useCallback((d: 1 | -1) => adjustCondition(actorId, "dying", d), [actorId]);
   const onWoundedAdjust = useCallback((d: 1 | -1) => adjustCondition(actorId, "wounded", d), [actorId]);
 
+  const [hpOpen, setHpOpen] = useState(false);
+  const onHpSubmit = useCallback((mode: HpMode, amount: number) => {
+    if (!view) return;
+    if (mode === "damage") applyDamageTo(actorId, amount);
+    else if (mode === "heal") setHp(actorId, hpAfterHeal(view.header.hp.value, view.header.hp.max, amount));
+    else setHp(actorId, hpClamped(amount, view.header.hp.max));
+  }, [actorId, view]);
+
   if (!view) {
     return <div className="flex h-full items-center justify-center p-6 text-center text-zinc-400">Character unavailable.</div>;
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <VitalsHeader
-        header={view.header}
-        conditions={view.conditions}
-        onHeroAdjust={onHeroAdjust}
-        onDyingAdjust={onDyingAdjust}
-        onWoundedAdjust={onWoundedAdjust}
-        onSwitch={onSwitch}
-      />
-      <SubTabBar />
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        {subTab === "vitals" && <PanelStub name="Vitals" />}
-        {subTab === "skills" && <PanelStub name="Skills" />}
-        {subTab === "items" && <PanelStub name="Items" />}
-        {subTab === "feats" && <PanelStub name="Feats" />}
-        {subTab === "bio" && <PanelStub name="Bio" />}
+    <>
+      <div className="flex h-full flex-col">
+        <VitalsHeader
+          header={view.header}
+          conditions={view.conditions}
+          onHpTap={() => setHpOpen(true)}
+          onHeroAdjust={onHeroAdjust}
+          onDyingAdjust={onDyingAdjust}
+          onWoundedAdjust={onWoundedAdjust}
+          onSwitch={onSwitch}
+        />
+        <SubTabBar />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {subTab === "vitals" && <PanelStub name="Vitals" />}
+          {subTab === "skills" && <PanelStub name="Skills" />}
+          {subTab === "items" && <PanelStub name="Items" />}
+          {subTab === "feats" && <PanelStub name="Feats" />}
+          {subTab === "bio" && <PanelStub name="Bio" />}
+        </div>
       </div>
-    </div>
+      {hpOpen && view && (
+        <HpNumpad hp={view.header.hp} onSubmit={onHpSubmit} onSetTemp={(n) => setTempHp(actorId, n)} onClose={() => setHpOpen(false)} />
+      )}
+    </>
   );
 }
