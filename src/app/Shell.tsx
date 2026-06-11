@@ -3,10 +3,13 @@ import { TabBar } from "./TabBar";
 import { TabContent } from "./TabContent";
 import { useFullscreen } from "./useFullscreen";
 import { setUiMode } from "../foundry/settings";
+import { useChatFeed } from "./chat/useChatFeed";
+import { ChatToast } from "./chat/ChatToast";
 
 export function Shell() {
   const { isFullscreen, toggle } = useFullscreen();
   const actorId = useAppStore((s) => s.actorId);
+  useChatFeed();
   const title = actorId
     ? ((game as any).actors.get(actorId)?.name ?? "PF2e Mobile")
     : "PF2e Mobile";
@@ -42,6 +45,7 @@ export function Shell() {
         <TabContent />
       </main>
       <TabBar />
+      <ChatToast />
     </div>
   );
 }

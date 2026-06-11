@@ -5,6 +5,7 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: "sheet", label: "Sheet", icon: "fa-user" },
   { id: "actions", label: "Actions", icon: "fa-bolt" },
   { id: "combat", label: "Combat", icon: "fa-dice-d20" },
+  { id: "chat", label: "Chat", icon: "fa-comments" },
   { id: "journal", label: "Journal", icon: "fa-book-open" },
   { id: "map", label: "Map", icon: "fa-map" },
 ];

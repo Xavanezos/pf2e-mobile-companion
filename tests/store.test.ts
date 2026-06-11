@@ -13,6 +13,10 @@ describe("useAppStore", () => {
     useAppStore.getState().setActiveTab("combat");
     expect(useAppStore.getState().activeTab).toBe("combat");
   });
+  it("switches to the chat tab", () => {
+    useAppStore.getState().setActiveTab("chat");
+    expect(useAppStore.getState().activeTab).toBe("chat");
+  });
   it("sets and clears the actor id", () => {
     useAppStore.getState().setActorId("hero");
     expect(useAppStore.getState().actorId).toBe("hero");
