@@ -16,7 +16,7 @@ export function Pips({ value, max, label, onAdjust }: {
             aria-label={`${label} ${i + 1}`}
             disabled={!onAdjust}
             onClick={() => onAdjust?.(i < value ? -1 : 1)}
-            className={`h-4 w-4 rounded-full border ${on ? "border-amber-400 bg-amber-400" : "border-zinc-600 bg-transparent"}`}
+            className={`h-4 w-4 rounded-full ${on ? "bg-amber-400" : "bg-zinc-600"}`}
           />
         ))}
       </div>
