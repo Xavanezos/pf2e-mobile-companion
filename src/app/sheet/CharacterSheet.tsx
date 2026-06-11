@@ -5,7 +5,8 @@ import { useFoundryHook } from "../useFoundryHook";
 import { VitalsHeader } from "./VitalsHeader";
 import { SubTabBar } from "./SubTabBar";
 import { HpNumpad, type HpMode } from "./HpNumpad";
-import { setHeroPoints, adjustCondition, setHp, setTempHp, applyDamageTo } from "../../foundry/actor/mutations";
+import { ConditionsModal } from "./ConditionsModal";
+import { setHeroPoints, adjustCondition, toggleCondition, setHp, setTempHp, applyDamageTo } from "../../foundry/actor/mutations";
 import { hpAfterHeal, hpClamped } from "../../foundry/actor/hp";
 
 function PanelStub({ name }: { name: string }) {
@@ -29,6 +30,7 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
   const onWoundedAdjust = useCallback((d: 1 | -1) => adjustCondition(actorId, "wounded", d), [actorId]);
 
   const [hpOpen, setHpOpen] = useState(false);
+  const [condOpen, setCondOpen] = useState(false);
   const onHpSubmit = useCallback((mode: HpMode, amount: number) => {
     if (!view) return;
     if (mode === "damage") applyDamageTo(actorId, amount);
@@ -50,6 +52,8 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
           onHeroAdjust={onHeroAdjust}
           onDyingAdjust={onDyingAdjust}
           onWoundedAdjust={onWoundedAdjust}
+          onConditionTap={() => setCondOpen(true)}
+          onConditionAdd={() => setCondOpen(true)}
           onSwitch={onSwitch}
         />
         <SubTabBar />
@@ -63,6 +67,14 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
       </div>
       {hpOpen && view && (
         <HpNumpad hp={view.header.hp} onSubmit={onHpSubmit} onSetTemp={(n) => setTempHp(actorId, n)} onClose={() => setHpOpen(false)} />
+      )}
+      {condOpen && view && (
+        <ConditionsModal
+          active={view.conditions}
+          onToggle={(slug) => toggleCondition(actorId, slug)}
+          onAdjust={(slug, d) => adjustCondition(actorId, slug, d)}
+          onClose={() => setCondOpen(false)}
+        />
       )}
     </>
   );
