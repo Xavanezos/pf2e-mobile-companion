@@ -46,7 +46,7 @@ I logged in as **Player1** (no password) in a mobile‑sized viewport; the modul
 
 API assumptions validated live: `actor.spellcasting` entry flags, `getSheetData()` shape (groups/active/uses/statistic), `entry.cast`, `collection.prepareSpell`, the consumable `consume()` path, and `spell.system` detail fields (e.g. area `{cone,15}`, `defense.save` basic reflex).
 
-Screenshots captured during the run: `spells-known-ezren-final.png`, `spellbook-prepare-ezren.png` (in the Playwright output dir).
+Screenshots (live, Ezren): `docs/reports/spells-known-ezren.png` (Spells tab), `docs/reports/spellbook-prepare-ezren.png` (spellbook).
 
 ---
 
