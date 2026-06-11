@@ -3,6 +3,7 @@ import { useSpells } from "./useSpells";
 import { SpellEntryCard } from "./spells/SpellEntryCard";
 import { SpellRow } from "./spells/SpellRow";
 import { SpellDetailModal } from "./spells/SpellDetailModal";
+import { SpellbookModal } from "./spells/SpellbookModal";
 import { castSpell, castRitual, consumeActivation } from "../../foundry/spells/cast";
 import type { SpellEntryView, SpellRowView } from "../../foundry/spells/types";
 
@@ -19,6 +20,7 @@ export function SpellsPanel({ actorId }: { actorId: string }) {
   const view = useSpells(actorId);
   const [section, setSection] = useState<Section>("known");
   const [detailSpellId, setDetailSpellId] = useState<string | null>(null);
+  const [spellbookEntryId, setSpellbookEntryId] = useState<string | null>(null);
 
   const onCast = (entry: SpellEntryView, spell: SpellRowView) =>
     void castSpell(actorId, entry.id, spell.id, { rank: spell.castRank, slotId: spell.slotIndex });
@@ -48,7 +50,15 @@ export function SpellsPanel({ actorId }: { actorId: string }) {
         (view.entries.length === 0 ? (
           <div className="p-4 text-sm text-zinc-500">No spells known.</div>
         ) : (
-          view.entries.map((e) => <SpellEntryCard key={e.id} entry={e} onCast={onCast} onDetail={setDetailSpellId} />)
+          view.entries.map((e) => (
+            <SpellEntryCard
+              key={e.id}
+              entry={e}
+              onCast={onCast}
+              onDetail={setDetailSpellId}
+              onSpellbook={(en) => setSpellbookEntryId(en.id)}
+            />
+          ))
         ))}
 
       {section === "rituals" &&
@@ -102,6 +112,9 @@ export function SpellsPanel({ actorId }: { actorId: string }) {
 
       {detailSpellId && (
         <SpellDetailModal actorId={actorId} spellId={detailSpellId} onClose={() => setDetailSpellId(null)} />
+      )}
+      {spellbookEntryId && (
+        <SpellbookModal actorId={actorId} entryId={spellbookEntryId} onClose={() => setSpellbookEntryId(null)} />
       )}
     </div>
   );
