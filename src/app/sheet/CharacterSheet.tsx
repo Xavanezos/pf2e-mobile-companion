@@ -13,6 +13,7 @@ import { CarryTypeMenu } from "./CarryTypeMenu";
 import { FeatsPanel } from "./FeatsPanel";
 import { ProfsPanel } from "./ProfsPanel";
 import { BioPanel } from "./BioPanel";
+import { SpellsPanel } from "./SpellsPanel";
 import { BreakdownModal, type BreakdownRequest } from "./BreakdownModal";
 import { DetailModal } from "./DetailModal";
 import { setHeroPoints, adjustCondition, toggleCondition, setHp, setTempHp, applyDamageTo, setInitiativeStatistic, setShieldHp, setEquipped, setInvested } from "../../foundry/actor/mutations";
@@ -82,6 +83,7 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
             />
           )}
           {subTab === "skills" && <SkillsPanel view={view} onShowBreakdown={setBreakdown} />}
+          {subTab === "spells" && <SpellsPanel actorId={actorId} />}
           {subTab === "items" && (
             <ItemsPanel
               view={view}

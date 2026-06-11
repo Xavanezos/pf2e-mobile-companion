@@ -3,6 +3,7 @@ import { useAppStore, type SheetSubTab } from "../store";
 const SUB_TABS: { id: SheetSubTab; label: string }[] = [
   { id: "vitals", label: "Vitals" },
   { id: "skills", label: "Skills" },
+  { id: "spells", label: "Spells" },
   { id: "items", label: "Items" },
   { id: "feats", label: "Feats" },
   { id: "profs", label: "Profs" },
