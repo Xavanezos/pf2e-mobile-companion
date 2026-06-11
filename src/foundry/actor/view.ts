@@ -1,7 +1,7 @@
 import type {
   AbilityView, CharacterLike, ConditionView, CoinsView, DefensesView, EffectView, HeaderView,
   InitiativeOption, InventoryCategoryView, InventoryItemLike, InventoryItemView, InventoryView,
-  BioView, CharacterView, FeatGroupView, FeatView, ModifierLike, ModPartView, ProficiencyView, Rank, SaveView, SkillView, SpeedView, TraitsView,
+  BioView, CharacterView, FeatGroupView, FeatView, ItemDetailLike, ItemDetailView, ModifierLike, ModPartView, ProficiencyView, Rank, SaveView, SkillView, SpeedView, TraitsView,
 } from "./types";
 
 /** Extract a modifier breakdown from a live PF2e statistic (#5). Defensive:
@@ -108,7 +108,7 @@ export function mapConditions(a: CharacterLike): ConditionView[] {
 }
 
 export function mapEffects(a: CharacterLike): EffectView[] {
-  return a.itemTypes.effect.map((e) => ({ name: e.name, img: e.img, badge: effectBadgeLabel(e.badge) }));
+  return a.itemTypes.effect.map((e) => ({ id: e.id, name: e.name, img: e.img, badge: effectBadgeLabel(e.badge) }));
 }
 
 const DASH = "—";
@@ -190,8 +190,8 @@ const FEAT_GROUPS: Record<string, { label: string; order: number }> = {
 const OTHER_FEAT_GROUP = { label: "Other", order: 7 };
 
 export function actionGlyph(
-  actionType: { value: string | null } | undefined,
-  actions: { value: number | null } | undefined,
+  actionType: { value?: string | null } | undefined,
+  actions: { value?: number | null } | undefined,
 ): string | null {
   const type = actionType?.value;
   if (type === "action") return actions?.value ? String(actions.value) : "1";
@@ -238,6 +238,40 @@ export function mapBio(a: CharacterLike): BioView {
     defenses: mapProficiencies(s.proficiencies?.defenses),
     appearance: s.details.biography?.appearance || undefined,
     backstory: s.details.biography?.backstory || undefined,
+  };
+}
+
+const ITEM_TYPE_LABELS: Record<string, string> = {
+  weapon: "Weapon", armor: "Armor", shield: "Shield", equipment: "Equipment",
+  consumable: "Consumable", treasure: "Treasure", backpack: "Container",
+  feat: "Feat", action: "Action", effect: "Effect", spell: "Spell",
+};
+
+/** Detail for the tap-for-info popup (#3): read lazily from a live item. Covers
+ *  feats and physical items (and effects). `descriptionHtml` is raw — the
+ *  component enriches it best-effort. */
+export function buildItemDetail(it: ItemDetailLike): ItemDetailView {
+  const sys = it.system;
+  const rarity = sys.traits?.rarity;
+  const traits = [
+    ...(rarity && rarity !== "common" ? [rarity] : []),
+    ...(sys.traits?.value ?? []),
+  ];
+  const meta: { label: string; value: string }[] = [];
+  if (sys.quantity != null && sys.quantity > 1) meta.push({ label: "Quantity", value: String(sys.quantity) });
+  if (sys.bulk?.value != null) meta.push({ label: "Bulk", value: formatBulk(sys.bulk.value) });
+  const price = formatPrice(sys.price?.value ?? {});
+  if (price !== DASH) meta.push({ label: "Price", value: price });
+  if (sys.usage?.value) meta.push({ label: "Usage", value: sys.usage.value });
+  return {
+    name: it.name,
+    img: it.img,
+    typeLabel: ITEM_TYPE_LABELS[it.type] ?? it.type,
+    level: sys.level?.value,
+    traits,
+    actionGlyph: actionGlyph(sys.actionType, sys.actions),
+    meta,
+    descriptionHtml: sys.description?.value ?? "",
   };
 }
 

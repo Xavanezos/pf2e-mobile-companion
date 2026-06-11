@@ -55,7 +55,19 @@ export interface TraitsView { size: string; immunities: IwrView[]; resistances: 
 export interface SkillView { slug: string; label: string; mod: number; rank: Rank; armor: boolean; lore: boolean; breakdown?: ModPartView[]; }
 
 export interface ConditionView { slug: string; name: string; value: number | null; img?: string; locked: boolean; }
-export interface EffectView { name: string; img?: string; badge: string | null; }
+export interface EffectView { id?: string; name: string; img?: string; badge: string | null; }
+
+/** Lazy detail for the tap-for-info popup (#3) — feats, items, effects. */
+export interface ItemDetailView {
+  name: string;
+  img?: string;
+  typeLabel: string;
+  level?: number;
+  traits: string[];
+  actionGlyph: string | null;
+  meta: { label: string; value: string }[];
+  descriptionHtml: string;
+}
 
 export interface CoinsView { cp: number; sp: number; gp: number; pp: number; }
 export interface InventoryItemView {
@@ -114,7 +126,25 @@ export interface IwrLike { label: string; value?: number; }
 export interface ModifierLike { label: string; modifier: number; enabled?: boolean; type?: string; }
 export interface SkillLike { slug: string; label: string; mod: number; rank: number; armor: boolean; lore?: boolean; modifiers?: ModifierLike[]; check?: { modifiers?: ModifierLike[] }; }
 export interface ConditionLike { slug: string; name: string; value: number | null; img?: string; isLocked?: boolean; }
-export interface EffectLike { name: string; img?: string; badge?: { value?: number; label?: string } | null; }
+export interface EffectLike { id?: string; name: string; img?: string; badge?: { value?: number; label?: string } | null; }
+
+/** Live item read on demand for the detail popup (#3): feat | physical item | effect. */
+export interface ItemDetailLike {
+  name: string;
+  img?: string;
+  type: string;
+  system: {
+    description?: { value?: string };
+    traits?: { value?: string[]; rarity?: string };
+    level?: { value?: number };
+    actionType?: { value?: string | null };
+    actions?: { value?: number | null };
+    quantity?: number;
+    bulk?: { value?: number };
+    price?: { value?: { cp?: number; sp?: number; gp?: number; pp?: number } };
+    usage?: { value?: string };
+  };
+}
 
 export interface InventoryItemLike {
   id: string;
