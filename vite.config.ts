@@ -33,6 +33,12 @@ export default defineConfig({
       formats: ["es"],
       fileName: () => "module.js",
     },
+    rollupOptions: {
+      // The app is lazy-imported in module.ts (to defer React past the dev
+      // Refresh-preamble install). Inline it so production stays a single
+      // module.js that Foundry can load directly.
+      output: { inlineDynamicImports: true },
+    },
   },
   plugins: [react()],
 });
