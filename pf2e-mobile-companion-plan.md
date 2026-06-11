@@ -73,13 +73,15 @@ A Foundry VTT module that replaces the Foundry UI on mobile Chrome with a fast, 
 
 > **Slice 1 done & verified live (2026-06-11):** checks + chat feed (committed to `main`; typecheck/build/66 tests green; manual checklist passed; damage-apply spike → deferred to Phase 7). Spec: `docs/superpowers/specs/2026-06-11-phase-3-rolling-design.md` · Plan: `docs/superpowers/plans/2026-06-11-phase-3-rolling-slice-1.md`.
 >
-> **Strikes moved to Phase 4 (2026-06-12)** — they belong in the Actions tab (see Phase 4). Phase 3's remaining work is **spells**, in progress now.
+> **Strikes moved to Phase 4 (2026-06-12)** — they belong in the Actions tab (see Phase 4).
+>
+> **Spells DONE & live-tested (2026-06-12):** Spells sub-tab (Known/Rituals/Activations), tap-for-detail popups, cast→chat, and a spellbook (prepare/manage). Plan: `docs/superpowers/plans/2026-06-12-phase-3-spells.md` · Report: `docs/reports/2026-06-12-spells-overnight-report.md`. (Learning new spells from the compendium is deferred.)
 
 This is the heart of it. Everything goes through the system so rule elements, your homebrew, MAP, and degree of success all work.
 
 - [x] Skill/save/perception checks: `actor.skills.athletics.roll()`, `actor.saves.reflex.roll()`, `actor.perception.roll()` — via the breakdown popup's **Roll** button (Slice 1, `skipDialog: true`).
 - [ ] **Strikes → moved to Phase 4 (Actions tab).** `actor.system.actions`: each strike has `.variants[0..2]` (MAP 0/−5/−10) + `.damage` / `.critical`, shown as a card with three attack buttons + damage + crit. See Phase 4.
-- [ ] Spellcasting: iterate `actor.spellcasting`, render entries → ranks → spells. Cast via `spell.parent.cast(spell, { rank, slotId })` — check how the PF2e sheet does it and mirror that. Show remaining slots / focus points; focus point spend should decrement properly.
+- [x] Spellcasting: **Spells sub-tab** (Known / Rituals / Activations) — iterate `actor.spellcasting`, entries → ranks → spells; cast via `entry.cast(spell, { rank, slotId })`; detail popups; spellbook (prepare slots / manage repertoire); remaining slots + focus shown, decrement on cast. Live-tested on Ezren (2026-06-12). Learning new spells from the compendium deferred. See `docs/reports/2026-06-12-spells-overnight-report.md`.
 - [x] Roll results: subscribe to `createChatMessage` and render a chat feed — **Chat tab** (full history) + cross-tab **toast** for own results; real PF2e card HTML via `message.renderHTML()` (Slice 1). Damage-apply buttons: see the Spike result in the spec.
 - [ ] Damage application buttons on incoming messages (the PF2e chat card buttons may "just work" if you render the real HTML and let their listeners attach — test this early, it determines how much chat UI you must build).
 
