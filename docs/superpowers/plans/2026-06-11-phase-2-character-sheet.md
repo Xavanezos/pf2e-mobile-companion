@@ -22,7 +22,7 @@
 
 ## Execution status (2026-06-11)
 
-**Done & committed to `main`: Tasks 2–16** — the pure data layer (`src/foundry/actor/{types,view,hp,mutations}.ts`) and the live shell (`src/app/useActor.ts` + `src/app/sheet/{VitalsHeader,SubTabBar,CharacterSheet}.tsx` + `parts/*`, wired via `SheetTab.tsx`). Tests 43/43 green; typecheck + build clean. **Resume at Task 17.** Task 1 (probe) was run live and surfaced the bulk-path error below.
+**Phase 2 is COMPLETE (Tasks 2–24) and verified live on 2026-06-11.** The pure data layer (`src/foundry/actor/{types,view,hp,mutations}.ts`) and the full live sheet (`src/app/useActor.ts` + `src/app/sheet/*`) shipped to `main`. Polish and fixes continued in **Phase 2.1** (`docs/superpowers/specs|plans/2026-06-11-phase-2.1-character-sheet-enhancements*`). The deviation notes below are historical.
 
 **Deviations applied during execution (committed; these SUPERSEDE the matching snippets above):**
 1. **Inventory bulk** — the real API is `actor.inventory.bulk` (`InventoryBulk`: `.value.normal` / `.max` / `.isEncumbered`), **not** `inventory.totalBulk` (the Explore note was wrong and crashed render). Task 2's `CharacterLike.inventory` type and Task 7's `mapInventory` were updated accordingly; the unused `attributes.encumbered` field was removed.

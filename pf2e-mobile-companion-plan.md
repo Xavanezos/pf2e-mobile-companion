@@ -39,17 +39,33 @@ A Foundry VTT module that replaces the Foundry UI on mobile Chrome with a fast, 
 
 ---
 
-## Phase 2 — Character sheet (read + live)
+## Phase 2 — Character sheet (read + live) ✅ Done (2026-06-11)
 
-- [ ] Header: name, portrait, HP / temp HP / max, AC, conditions, hero points, speed, perception.
-- [ ] HP control: tap to open a +/- numpad → `actor.update({"system.attributes.hp.value": n})` or better, `actor.applyDamage()` for damage (it respects temp HP and resistances).
-- [ ] Conditions: list active conditions with values; add/remove via `actor.toggleCondition("frightened")` / `actor.increaseCondition(...)` / `actor.decreaseCondition(...)`.
-- [ ] Skills list with modifiers (`actor.skills`), saves, ability scores.
-- [ ] Inventory: read `actor.inventory`, show equipped/carried, bulk. Equip/unequip via item updates. (Read-only is fine for v1.)
-- [ ] Feats & features: grouped read-only list (`actor.itemTypes.feat`).
-- [ ] Live updates: subscribe to `updateActor`, `updateItem`, `createItem`, `deleteItem` hooks filtered to the active actor → refresh store. Verify: GM changes HP on desktop → phone updates instantly.
+> Spec: `docs/superpowers/specs/2026-06-11-phase-2-character-sheet-design.md` · Plan: `docs/superpowers/plans/2026-06-11-phase-2-character-sheet.md`. Comprehensive live sheet: sticky vitals header + sub-tabs (Vitals / Skills / Items / Feats / Bio). Rolling deferred to Phase 3; build-time edits out of scope by design. Tests green, typecheck + build clean; verified live (GM-on-desktop + player-on-mobile).
 
-**Milestone:** the sheet is a live mirror of the actor and HP/conditions are editable from the phone.
+- [x] Header: name, portrait, HP / temp HP / max, AC, conditions, hero points, speed, perception.
+- [x] HP control: tap to open a +/- numpad → `actor.update({"system.attributes.hp.value": n})` / `actor.applyDamage()` for damage (respects temp HP and resistances).
+- [x] Conditions: list active conditions with values; add/remove via `actor.toggleCondition(...)` / `increaseCondition` / `decreaseCondition`.
+- [x] Skills list with modifiers (`actor.skills`), saves, ability scores.
+- [x] Inventory: read `actor.inventory`, show equipped/carried, bulk. Equip/invest via item updates.
+- [x] Feats & features: grouped read-only list (`actor.itemTypes.feat`).
+- [x] Live updates: subscribe to `updateActor`, `updateItem`, `createItem`, `deleteItem` hooks filtered to the active actor → refresh store. GM changes HP on desktop → phone updates within ~1s.
+
+**Milestone:** ✅ the sheet is a live mirror of the actor and HP/conditions are editable from the phone.
+
+---
+
+## Phase 2.1 — Character sheet enhancements ✅ Done (2026-06-11)
+
+> Spec: `docs/superpowers/specs/2026-06-11-phase-2.1-character-sheet-enhancements-design.md` · Plan: `docs/superpowers/plans/2026-06-11-phase-2.1-character-sheet-enhancements.md`. Polish pass on the Phase 2 sheet; rolling still Phase 3. Some live-API paths (modifier breakdowns, HTML enrichment) flagged in the spec for confirmation in play.
+
+- [x] Fix: hero-point pips were invisible (the scoped `button { border: none }` reset outranked the `.border` utility) — now background-filled dots; tap to gain/spend.
+- [x] Fix: shield-HP edits now persist — update the shield **item**, not the derived `system.attributes.shield` path.
+- [x] Tap-for-info popups: feats, inventory items, and effects open a detail sheet (name, type/level, traits, action cost / bulk·price·usage, description). Spells arrive with Phase 3.
+- [x] Bio reorg (PF2e-faithful): new **Profs** sub-tab; lineage + languages moved to the top of Vitals; Bio is prose-only.
+- [x] Modifier breakdowns: tap AC / a save / perception / a skill / class DC to see its component modifiers + total. Display-only — the rolling phase adds a Roll button to the same popup.
+
+**Milestone:** ✅ richer, PF2e-faithful sheet — inspect any number's math and any item's rules text from the phone.
 
 ---
 

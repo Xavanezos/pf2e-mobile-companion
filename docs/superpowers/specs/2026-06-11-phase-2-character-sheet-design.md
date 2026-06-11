@@ -1,7 +1,7 @@
 # Phase 2 — Comprehensive Character Sheet (Design)
 
 **Date:** 2026-06-11
-**Status:** Approved
+**Status:** Implemented 2026-06-11 — see plan `docs/superpowers/plans/2026-06-11-phase-2-character-sheet.md`; enhancements in Phase 2.1 (`…-phase-2.1-character-sheet-enhancements-design.md`).
 **Target:** Foundry VTT v14, PF2e system v8.2+, Chrome on Android
 **Builds on:** Phase 1 mobile-takeover shell (`docs/superpowers/specs/2026-06-11-phase-1-mobile-takeover-shell-design.md`). Reuses the Foundry-adapter/React-app split, the Zustand UI-mirror store, `useFoundryHook`, Tailwind v4 (no preflight), Foundry's Font Awesome, and Vitest.
 
