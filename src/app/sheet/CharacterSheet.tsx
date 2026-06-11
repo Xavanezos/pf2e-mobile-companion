@@ -6,7 +6,8 @@ import { VitalsHeader } from "./VitalsHeader";
 import { SubTabBar } from "./SubTabBar";
 import { HpNumpad, type HpMode } from "./HpNumpad";
 import { ConditionsModal } from "./ConditionsModal";
-import { setHeroPoints, adjustCondition, toggleCondition, setHp, setTempHp, applyDamageTo } from "../../foundry/actor/mutations";
+import { VitalsPanel } from "./VitalsPanel";
+import { setHeroPoints, adjustCondition, toggleCondition, setHp, setTempHp, applyDamageTo, setInitiativeStatistic, setShieldHp } from "../../foundry/actor/mutations";
 import { hpAfterHeal, hpClamped } from "../../foundry/actor/hp";
 
 function PanelStub({ name }: { name: string }) {
@@ -58,7 +59,14 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
         />
         <SubTabBar />
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {subTab === "vitals" && <PanelStub name="Vitals" />}
+          {subTab === "vitals" && (
+            <VitalsPanel
+              view={view}
+              onInitiativeChange={(stat) => setInitiativeStatistic(actorId, stat)}
+              onShieldHpAdjust={(dlt) => view.defenses.shield && setShieldHp(actorId, hpClamped(view.defenses.shield.hp.value + dlt, view.defenses.shield.hp.max))}
+              onManageConditions={() => setCondOpen(true)}
+            />
+          )}
           {subTab === "skills" && <PanelStub name="Skills" />}
           {subTab === "items" && <PanelStub name="Items" />}
           {subTab === "feats" && <PanelStub name="Feats" />}
