@@ -71,12 +71,14 @@ A Foundry VTT module that replaces the Foundry UI on mobile Chrome with a fast, 
 
 ## Phase 3 — Rolling: checks, strikes, spells
 
+> **Slice 1 implemented (2026-06-11):** checks + chat feed (committed to `main`; typecheck/build/66 tests green; live verification pending — see the manual checklist + damage-button spike in the plan). Spec: `docs/superpowers/specs/2026-06-11-phase-3-rolling-design.md` · Plan: `docs/superpowers/plans/2026-06-11-phase-3-rolling-slice-1.md`. Next: Slice 2 (strikes), Slice 3 (spells).
+
 This is the heart of it. Everything goes through the system so rule elements, your homebrew, MAP, and degree of success all work.
 
-- [ ] Skill/save/perception checks: `actor.skills.athletics.roll()`, `actor.saves.reflex.roll()`, `actor.perception.roll()`. Pass `{ event }` or roll options as needed.
+- [x] Skill/save/perception checks: `actor.skills.athletics.roll()`, `actor.saves.reflex.roll()`, `actor.perception.roll()` — via the breakdown popup's **Roll** button (Slice 1, `skipDialog: true`).
 - [ ] Strikes: `actor.system.actions` (the prepared strike array). Each strike has `.attack/.variants[0..2]` (MAP 0/-5/-10) and `.damage` / `.critical`. Render each strike as a card with three attack buttons + damage + crit.
 - [ ] Spellcasting: iterate `actor.spellcasting`, render entries → ranks → spells. Cast via `spell.parent.cast(spell, { rank, slotId })` — check how the PF2e sheet does it and mirror that. Show remaining slots / focus points; focus point spend should decrement properly.
-- [ ] Roll results: subscribe to `createChatMessage` and render a chat feed (or a toast with the latest result + expandable history). PF2e chat cards are HTML — you can render their enriched HTML directly in a styled container, which gets you damage buttons etc. for free, or build your own minimal renderer from the roll data.
+- [x] Roll results: subscribe to `createChatMessage` and render a chat feed — **Chat tab** (full history) + cross-tab **toast** for own results; real PF2e card HTML via `message.renderHTML()` (Slice 1). Damage-apply buttons: see the Spike result in the spec.
 - [ ] Damage application buttons on incoming messages (the PF2e chat card buttons may "just work" if you render the real HTML and let their listeners attach — test this early, it determines how much chat UI you must build).
 
 **Milestone:** a player can fight a full round from the phone: strike with MAP, roll damage, cast a spell, make a save.

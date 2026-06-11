@@ -153,3 +153,15 @@ No new mutations to existing actor data — rolls are side effects that produce 
   - `rollKey` derivation on the view (which rows are rollable).
 - **Components** verified by `npm run typecheck` + `npm run build` + a manual checklist (roll a skill, a save, perception; result toasts and lands in the Chat tab; tapping the toast switches tabs; GM/other messages appear in the tab but don't toast).
 - The roll functions in `rolls.ts` are thin guarded wrappers over live objects — covered by the manual checklist, like the existing `mutations.ts`.
+
+---
+
+## Spike result (Slice 1 — pending live verification)
+
+**Status: unverified** — requires a running Foundry (GM on desktop + a mobile/emulated client). The render path is `src/foundry/chat/render.ts`: it calls `message.renderHTML()` and then `Hooks.callAll("renderChatMessageHTML", msg, el)` so PF2e (and modules) can bind chat-card listeners on the element we mount.
+
+**To verify:** post a chat card carrying an **Apply Damage** button into the player's visible log (e.g. a GM strike/damage roll), then tap that button in the mobile **Chat** tab.
+- **Works** (the actor's HP changes) → PF2e's listeners attach to our mounted element; Slice 2 needs no custom damage buttons.
+- **Dead or unstyled** → record the failure mode (no listener vs. broken styling); Slice 2 adds custom apply-damage buttons built from `message.rolls`/flags.
+
+Checks (Slice 1) produce no damage buttons, so this does **not** gate Slice 1 — it scopes Slice 2.
