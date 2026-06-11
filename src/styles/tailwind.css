@@ -1,0 +1,60 @@
+@layer theme, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Scoped reset — replaces Tailwind's (disabled) preflight, applies only inside
+   our root so desktop Foundry is untouched. */
+#pf2e-mobile-companion-root,
+#pf2e-mobile-companion-root *,
+#pf2e-mobile-companion-root *::before,
+#pf2e-mobile-companion-root *::after {
+  box-sizing: border-box;
+}
+
+#pf2e-mobile-companion-root {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  margin: 0;
+  background: #0f0f14;
+  color: #e8e8ea;
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-text-size-adjust: 100%;
+  overflow: hidden;
+}
+
+#pf2e-mobile-companion-root button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+#pf2e-mobile-companion-root img {
+  display: block;
+  max-width: 100%;
+}
+
+/* Hide stock Foundry chrome — gated by the body class, so clients without it
+   (desktop/GM) render normally. */
+body.pf2e-mobile-active #interface,
+body.pf2e-mobile-active #ui-top,
+body.pf2e-mobile-active #ui-left,
+body.pf2e-mobile-active #ui-right,
+body.pf2e-mobile-active #ui-bottom,
+body.pf2e-mobile-active #ui-middle,
+body.pf2e-mobile-active #board,
+body.pf2e-mobile-active #hotbar,
+body.pf2e-mobile-active #navigation,
+body.pf2e-mobile-active #players,
+body.pf2e-mobile-active #sidebar,
+body.pf2e-mobile-active #controls,
+body.pf2e-mobile-active #notifications {
+  display: none !important;
+}
+
+body.pf2e-mobile-active {
+  overflow: hidden;
+}
