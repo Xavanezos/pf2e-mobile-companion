@@ -1,0 +1,22 @@
+{
+  "id": "pf2e-mobile-companion",
+  "title": "PF2e Mobile Companion",
+  "description": "Mobile-first React UI for Pathfinder 2e on Foundry VTT (Chrome on Android). Replaces the stock UI on mobile with a purpose-built character sheet, action bar, combat tracker, journals, and lightweight battle map.",
+  "version": "0.0.1",
+  "authors": [{ "name": "diomi" }],
+  "compatibility": {
+    "minimum": "14",
+    "verified": "14"
+  },
+  "relationships": {
+    "systems": [
+      {
+        "id": "pf2e",
+        "type": "system",
+        "compatibility": { "minimum": "8.2.0" }
+      }
+    ]
+  },
+  "esmodules": ["module.js"],
+  "styles": ["style.css"]
+}
