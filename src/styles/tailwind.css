@@ -66,9 +66,9 @@ body.pf2e-mobile-active {
 #pf2e-mobile-companion-root .pf2e-chat-card {
   font-size: 0.85rem;
   line-height: 1.4;
-  border: 1px solid #3f3f46;
+  border: 1px solid #52525b;
   border-radius: 0.5rem;
-  background: #18181b;
+  background: #27272a;
   padding: 0.5rem 0.625rem;
   overflow-x: auto;
 }
@@ -78,5 +78,5 @@ body.pf2e-mobile-active {
 #pf2e-mobile-companion-root .pf2e-chat-card h3,
 #pf2e-mobile-companion-root .pf2e-chat-card h4 { font-weight: 700; margin: 0 0 0.25rem; }
 #pf2e-mobile-companion-root .pf2e-chat-card .message-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
-#pf2e-mobile-companion-root .pf2e-chat-card .dice-total { background: #27272a; border-radius: 0.375rem; padding: 0.125rem 0.375rem; font-weight: 700; }
-#pf2e-mobile-companion-root .pf2e-chat-card button { border: 1px solid #52525b; border-radius: 0.375rem; padding: 0.125rem 0.5rem; background: #27272a; }
+#pf2e-mobile-companion-root .pf2e-chat-card .dice-total { background: #3f3f46; border-radius: 0.375rem; padding: 0.125rem 0.375rem; font-weight: 700; }
+#pf2e-mobile-companion-root .pf2e-chat-card button { border: 1px solid #52525b; border-radius: 0.375rem; padding: 0.125rem 0.5rem; background: #3f3f46; }

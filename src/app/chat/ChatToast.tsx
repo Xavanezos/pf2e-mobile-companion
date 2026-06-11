@@ -28,7 +28,7 @@ export function ChatToast() {
   return (
     <button
       onClick={() => { setActiveTab("chat"); dismiss(); }}
-      className={`fixed inset-x-3 bottom-20 z-[105000] flex items-center justify-between gap-3 rounded-xl border-l-4 bg-zinc-800/95 px-4 py-3 text-left shadow-lg ${TONE[toast.outcome ?? ""] ?? "border-zinc-600"}`}
+      className={`fixed inset-x-3 bottom-20 z-[105000] flex items-center justify-between gap-3 rounded-xl border-l-4 bg-zinc-800/80 px-4 py-3 text-left shadow-lg backdrop-blur-md ${TONE[toast.outcome ?? ""] ?? "border-zinc-600"}`}
     >
       <span className="min-w-0">
         <span className="block truncate text-sm font-semibold">{toast.title}</span>
