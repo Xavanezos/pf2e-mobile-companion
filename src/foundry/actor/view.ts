@@ -1,7 +1,7 @@
 import type {
   AbilityView, CharacterLike, ConditionView, CoinsView, DefensesView, EffectView, HeaderView,
   InitiativeOption, InventoryCategoryView, InventoryItemLike, InventoryItemView, InventoryView,
-  BioView, FeatGroupView, FeatView, ProficiencyView, Rank, SaveView, SkillView, SpeedView, TraitsView,
+  BioView, CharacterView, FeatGroupView, FeatView, ProficiencyView, Rank, SaveView, SkillView, SpeedView, TraitsView,
 } from "./types";
 
 export function mapHeader(a: CharacterLike): HeaderView {
@@ -219,5 +219,21 @@ export function mapBio(a: CharacterLike): BioView {
     defenses: mapProficiencies(s.proficiencies?.defenses),
     appearance: s.details.biography?.appearance || undefined,
     backstory: s.details.biography?.backstory || undefined,
+  };
+}
+
+export function buildCharacterView(a: CharacterLike): CharacterView {
+  return {
+    id: a.id,
+    header: mapHeader(a),
+    defenses: mapDefenses(a),
+    abilities: mapAbilities(a),
+    traits: mapTraits(a),
+    skills: mapSkills(a),
+    conditions: mapConditions(a),
+    effects: mapEffects(a),
+    inventory: mapInventory(a),
+    featGroups: mapFeats(a),
+    bio: mapBio(a),
   };
 }
