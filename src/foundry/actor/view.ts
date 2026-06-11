@@ -1,7 +1,7 @@
 import type {
   AbilityView, CharacterLike, ConditionView, CoinsView, DefensesView, EffectView, HeaderView,
   InitiativeOption, InventoryCategoryView, InventoryItemLike, InventoryItemView, InventoryView,
-  FeatGroupView, FeatView, Rank, SaveView, SkillView, SpeedView, TraitsView,
+  BioView, FeatGroupView, FeatView, ProficiencyView, Rank, SaveView, SkillView, SpeedView, TraitsView,
 } from "./types";
 
 export function mapHeader(a: CharacterLike): HeaderView {
@@ -200,4 +200,24 @@ export function mapFeats(a: CharacterLike): FeatGroupView[] {
   return [...groups.values()].sort(
     (x, y) => (FEAT_GROUPS[x.key]?.order ?? OTHER_FEAT_GROUP.order) - (FEAT_GROUPS[y.key]?.order ?? OTHER_FEAT_GROUP.order),
   );
+}
+
+function mapProficiencies(rec?: Record<string, { label: string; rank: number; visible?: boolean }>): ProficiencyView[] {
+  return Object.values(rec ?? {})
+    .filter((p) => p.visible !== false)
+    .map((p) => ({ label: p.label, rank: p.rank as Rank }));
+}
+
+export function mapBio(a: CharacterLike): BioView {
+  const s = a.system;
+  return {
+    ancestry: a.ancestry?.name, heritage: a.heritage?.name, background: a.background?.name,
+    className: a.class?.name, deity: a.deity?.name ?? undefined,
+    size: SIZE_LABELS[s.traits.size.value] ?? s.traits.size.value,
+    languages: s.details.languages?.value ?? [],
+    attacks: mapProficiencies(s.proficiencies?.attacks),
+    defenses: mapProficiencies(s.proficiencies?.defenses),
+    appearance: s.details.biography?.appearance || undefined,
+    backstory: s.details.biography?.backstory || undefined,
+  };
 }
