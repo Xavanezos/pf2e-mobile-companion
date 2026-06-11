@@ -7,6 +7,7 @@ import { SubTabBar } from "./SubTabBar";
 import { HpNumpad, type HpMode } from "./HpNumpad";
 import { ConditionsModal } from "./ConditionsModal";
 import { VitalsPanel } from "./VitalsPanel";
+import { SkillsPanel } from "./SkillsPanel";
 import { setHeroPoints, adjustCondition, toggleCondition, setHp, setTempHp, applyDamageTo, setInitiativeStatistic, setShieldHp } from "../../foundry/actor/mutations";
 import { hpAfterHeal, hpClamped } from "../../foundry/actor/hp";
 
@@ -67,7 +68,7 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
               onManageConditions={() => setCondOpen(true)}
             />
           )}
-          {subTab === "skills" && <PanelStub name="Skills" />}
+          {subTab === "skills" && <SkillsPanel view={view} />}
           {subTab === "items" && <PanelStub name="Items" />}
           {subTab === "feats" && <PanelStub name="Feats" />}
           {subTab === "bio" && <PanelStub name="Bio" />}
