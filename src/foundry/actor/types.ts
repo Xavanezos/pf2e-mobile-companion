@@ -176,8 +176,12 @@ export interface CharacterLike {
   skills: Record<string, SkillLike>;
   conditions: { active: ConditionLike[] };
   itemTypes: { effect: EffectLike[]; feat: FeatLike[] };
-  inventory: { contents: InventoryItemLike[]; currency: CoinsView; totalBulk: { value: number } };
-  attributes?: { encumbered?: boolean };
+  inventory: {
+    contents: InventoryItemLike[];
+    currency: CoinsView;
+    /** PF2e `InventoryBulk`: `.value.normal` is the carried bulk; `.max` the limit. */
+    bulk: { value: { normal: number }; max: number; isEncumbered: boolean };
+  };
   ancestry?: { name: string } | null;
   heritage?: { name: string } | null;
   background?: { name: string } | null;

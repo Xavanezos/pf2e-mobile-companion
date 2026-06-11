@@ -155,7 +155,12 @@ export function mapInventory(a: CharacterLike): InventoryView {
   );
   const c = a.inventory.currency;
   const currency: CoinsView = { cp: c.cp ?? 0, sp: c.sp ?? 0, gp: c.gp ?? 0, pp: c.pp ?? 0 };
-  return { categories, currency, bulkLabel: formatBulk(a.inventory.totalBulk.value), encumbered: a.attributes?.encumbered ?? false };
+  // PF2e exposes carried bulk via `inventory.bulk` (InventoryBulk), not `totalBulk`.
+  // Guard every hop so an unexpected shape degrades to "0 / 0" instead of crashing render.
+  const ib = a.inventory.bulk;
+  const normal = ib?.value?.normal ?? 0;
+  const max = ib?.max ?? 0;
+  return { categories, currency, bulkLabel: `${normal} / ${max}`, encumbered: ib?.isEncumbered ?? false };
 }
 
 /** category key → label + display order. Unknown categories fall through to "other". */

@@ -38,7 +38,7 @@ describe("mapInventory", () => {
         system: { equipped: { carryType: "worn" } } }),
     ];
     a.inventory.currency = { cp: 0, sp: 5, gp: 12, pp: 0 };
-    a.inventory.totalBulk = { value: 3 };
+    a.inventory.bulk = { value: { normal: 3 }, max: 9, isEncumbered: false };
     const inv = mapInventory(a);
 
     expect(inv.categories.map((c) => c.key)).toEqual(["weapon", "armor", "container"]);
@@ -47,7 +47,7 @@ describe("mapInventory", () => {
     expect(inv.categories[1].items[0]).toMatchObject({ invested: false, equipped: true });
     expect(inv.categories[2].items[0]).toMatchObject({ isContainer: true });
     expect(inv.currency).toEqual({ cp: 0, sp: 5, gp: 12, pp: 0 });
-    expect(inv.bulkLabel).toBe("3");
+    expect(inv.bulkLabel).toBe("3 / 9");
     expect(inv.encumbered).toBe(false);
   });
 
