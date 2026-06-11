@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { useAppStore } from "../src/app/store";
 
 describe("useAppStore", () => {
-  beforeEach(() => useAppStore.setState({ activeTab: "sheet", actorId: null }));
+  beforeEach(() => useAppStore.setState({ activeTab: "sheet", actorId: null, sheetSubTab: "vitals" }));
 
   it("defaults to the sheet tab and no actor", () => {
     const s = useAppStore.getState();
@@ -18,5 +18,12 @@ describe("useAppStore", () => {
     expect(useAppStore.getState().actorId).toBe("hero");
     useAppStore.getState().setActorId(null);
     expect(useAppStore.getState().actorId).toBeNull();
+  });
+  it("defaults the sheet sub-tab to vitals", () => {
+    expect(useAppStore.getState().sheetSubTab).toBe("vitals");
+  });
+  it("switches the sheet sub-tab", () => {
+    useAppStore.getState().setSheetSubTab("skills");
+    expect(useAppStore.getState().sheetSubTab).toBe("skills");
   });
 });

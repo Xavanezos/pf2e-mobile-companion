@@ -1,12 +1,15 @@
 import { create } from "zustand";
 
 export type TabId = "sheet" | "actions" | "combat" | "journal" | "map";
+export type SheetSubTab = "vitals" | "skills" | "items" | "feats" | "bio";
 
 export interface AppState {
   activeTab: TabId;
   setActiveTab: (tab: TabId) => void;
   actorId: string | null;
   setActorId: (id: string | null) => void;
+  sheetSubTab: SheetSubTab;
+  setSheetSubTab: (tab: SheetSubTab) => void;
 }
 
 /** Mirrors UI state only; Foundry Documents remain the source of truth. */
@@ -15,4 +18,6 @@ export const useAppStore = create<AppState>((set) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
   actorId: null,
   setActorId: (id) => set({ actorId: id }),
+  sheetSubTab: "vitals",
+  setSheetSubTab: (tab) => set({ sheetSubTab: tab }),
 }));
