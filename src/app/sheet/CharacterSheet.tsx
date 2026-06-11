@@ -8,7 +8,9 @@ import { HpNumpad, type HpMode } from "./HpNumpad";
 import { ConditionsModal } from "./ConditionsModal";
 import { VitalsPanel } from "./VitalsPanel";
 import { SkillsPanel } from "./SkillsPanel";
-import { setHeroPoints, adjustCondition, toggleCondition, setHp, setTempHp, applyDamageTo, setInitiativeStatistic, setShieldHp } from "../../foundry/actor/mutations";
+import { ItemsPanel } from "./ItemsPanel";
+import { CarryTypeMenu } from "./CarryTypeMenu";
+import { setHeroPoints, adjustCondition, toggleCondition, setHp, setTempHp, applyDamageTo, setInitiativeStatistic, setShieldHp, setEquipped, setInvested } from "../../foundry/actor/mutations";
 import { hpAfterHeal, hpClamped } from "../../foundry/actor/hp";
 
 function PanelStub({ name }: { name: string }) {
@@ -33,6 +35,7 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
 
   const [hpOpen, setHpOpen] = useState(false);
   const [condOpen, setCondOpen] = useState(false);
+  const [equipItemId, setEquipItemId] = useState<string | null>(null);
   const onHpSubmit = useCallback((mode: HpMode, amount: number) => {
     if (!view) return;
     if (mode === "damage") applyDamageTo(actorId, amount);
@@ -43,6 +46,10 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
   if (!view) {
     return <div className="flex h-full items-center justify-center p-6 text-center text-zinc-400">Character unavailable.</div>;
   }
+
+  const equipItem = equipItemId
+    ? view.inventory.categories.flatMap((c) => c.items).find((i) => i.id === equipItemId) ?? null
+    : null;
 
   return (
     <>
@@ -69,7 +76,13 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
             />
           )}
           {subTab === "skills" && <SkillsPanel view={view} />}
-          {subTab === "items" && <PanelStub name="Items" />}
+          {subTab === "items" && (
+            <ItemsPanel
+              view={view}
+              onEquipTap={(id) => setEquipItemId(id)}
+              onInvestToggle={(id, next) => setInvested(actorId, id, next)}
+            />
+          )}
           {subTab === "feats" && <PanelStub name="Feats" />}
           {subTab === "bio" && <PanelStub name="Bio" />}
         </div>
@@ -83,6 +96,13 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
           onToggle={(slug) => toggleCondition(actorId, slug)}
           onAdjust={(slug, d) => adjustCondition(actorId, slug, d)}
           onClose={() => setCondOpen(false)}
+        />
+      )}
+      {equipItem && (
+        <CarryTypeMenu
+          itemName={equipItem.name}
+          onSelect={(carryType, hands) => setEquipped(actorId, equipItem.id, carryType, hands)}
+          onClose={() => setEquipItemId(null)}
         />
       )}
     </>
