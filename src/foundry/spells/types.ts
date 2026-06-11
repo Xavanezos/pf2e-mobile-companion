@@ -100,3 +100,15 @@ export interface SpellcastingSheetDataLike {
   statistic?: SpellStatisticLike | null;
   groups: SpellGroupLike[];
 }
+
+/** A live spellcasting entry as iterated from `actor.spellcasting`. */
+export interface SpellcastingEntryRuntime {
+  isRitual?: boolean;
+  category?: string;
+  getSheetData?: () => Promise<unknown>;
+}
+/** The live actor slice `buildSpellsView` reads. */
+export interface SpellcastingActorLike {
+  system?: { resources?: { focus?: { value?: number; max?: number } } };
+  spellcasting?: Iterable<SpellcastingEntryRuntime>;
+}

@@ -1,5 +1,6 @@
 import type {
   ActiveSpellLike,
+  SpellcastingActorLike,
   SpellcastingSheetDataLike,
   SpellEntryKind,
   SpellEntryView,
@@ -7,6 +8,7 @@ import type {
   SpellLike,
   SpellRankView,
   SpellRowView,
+  SpellsView,
   SpellUsesView,
 } from "./types";
 
@@ -43,7 +45,7 @@ function mapRow(a: ActiveSpellLike, rank: number, slotIndex: number | null): Spe
   };
 }
 
-const rankNumber = (id: "cantrips" | number): number => (id === "cantrips" ? 0 : id);
+const rankNumber = (id: "cantrips" | number): number => (id === "cantrips" ? 0 : Number(id));
 
 /** Per-rank "uses" pill. Cantrips/innate are unlimited (null); focus draws on the
  *  shared pool; prepared counts unexpended slots; spontaneous uses its own slots. */
@@ -88,4 +90,23 @@ export function mapSpellcastingEntry(
     dc: d.statistic?.dc?.value ?? null,
     ranks,
   };
+}
+
+function readFocus(actor: SpellcastingActorLike): { value: number; max: number } | null {
+  const f = actor.system?.resources?.focus;
+  if (!f || f.max == null || f.max <= 0) return null;
+  return { value: f.value ?? 0, max: f.max };
+}
+
+/** Async glue: build the full spells view from a live actor. Awaits each regular
+ *  entry's `getSheetData()`. Rituals + item activations are filled in Slice B. */
+export async function buildSpellsView(actor: SpellcastingActorLike): Promise<SpellsView> {
+  const focus = readFocus(actor);
+  const entries: SpellEntryView[] = [];
+  for (const entry of actor.spellcasting ?? []) {
+    if (!entry || entry.isRitual || entry.category === "ritual" || entry.category === "items") continue;
+    const data = await entry.getSheetData?.();
+    if (data) entries.push(mapSpellcastingEntry(data as SpellcastingSheetDataLike, focus));
+  }
+  return { entries, rituals: [], activations: [], focus };
 }
