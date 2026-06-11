@@ -5,6 +5,7 @@ const SUB_TABS: { id: SheetSubTab; label: string }[] = [
   { id: "skills", label: "Skills" },
   { id: "items", label: "Items" },
   { id: "feats", label: "Feats" },
+  { id: "profs", label: "Profs" },
   { id: "bio", label: "Bio" },
 ];
 

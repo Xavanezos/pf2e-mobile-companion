@@ -11,6 +11,7 @@ import { SkillsPanel } from "./SkillsPanel";
 import { ItemsPanel } from "./ItemsPanel";
 import { CarryTypeMenu } from "./CarryTypeMenu";
 import { FeatsPanel } from "./FeatsPanel";
+import { ProfsPanel } from "./ProfsPanel";
 import { BioPanel } from "./BioPanel";
 import { setHeroPoints, adjustCondition, toggleCondition, setHp, setTempHp, applyDamageTo, setInitiativeStatistic, setShieldHp, setEquipped, setInvested } from "../../foundry/actor/mutations";
 import { hpAfterHeal, hpClamped } from "../../foundry/actor/hp";
@@ -82,6 +83,7 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
             />
           )}
           {subTab === "feats" && <FeatsPanel view={view} />}
+          {subTab === "profs" && <ProfsPanel view={view} />}
           {subTab === "bio" && <BioPanel view={view} />}
         </div>
       </div>

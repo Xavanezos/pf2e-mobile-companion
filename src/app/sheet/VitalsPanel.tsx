@@ -21,8 +21,21 @@ export function VitalsPanel({ view, onInitiativeChange, onShieldHpAdjust, onMana
   onManageConditions: () => void;
 }) {
   const d = view.defenses;
+  const b = view.bio;
+  const lineage: [string, string | undefined][] = [
+    ["Ancestry", b.ancestry], ["Heritage", b.heritage], ["Background", b.background],
+    ["Class", b.className], ["Deity", b.deity], ["Size", b.size],
+  ];
   return (
     <div className="divide-y divide-zinc-800">
+      <Section title="Character">
+        {lineage.filter(([, v]) => v).map(([k, v]) => <StatRow key={k} label={k} value={v} />)}
+      </Section>
+
+      {b.languages.length > 0 && (
+        <Section title="Languages"><div className="text-sm text-zinc-300">{b.languages.join(", ")}</div></Section>
+      )}
+
       <Section title="Defenses">
         <StatRow label="Armor Class" value={d.ac} />
         {d.saves.map((s) => <StatRow key={s.slug} label={s.label} value={sign(s.mod)} right={<RankPip rank={s.rank} />} />)}
