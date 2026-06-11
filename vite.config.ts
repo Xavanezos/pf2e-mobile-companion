@@ -6,10 +6,17 @@ import { resolve } from "node:path";
 const moduleId = "pf2e-mobile-companion";
 const foundryPort = 30000;
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   root: "src",
   base: `/modules/${moduleId}/`,
   publicDir: resolve(import.meta.dirname, "public"),
+  // Library builds (build.lib) don't auto-replace process.env.NODE_ENV, but the
+  // bundled React reads it at runtime and Foundry loads module.js directly in the
+  // browser (no outer bundler) — without this define React throws "process is not
+  // defined" and the app never mounts. The dev server provides it via `mode`.
+  define: {
+    "process.env.NODE_ENV": JSON.stringify(mode === "production" ? "production" : "development"),
+  },
   server: {
     port: foundryPort + 1,
     proxy: {
@@ -61,4 +68,4 @@ export default defineConfig({
       },
     },
   ],
-});
+}));
