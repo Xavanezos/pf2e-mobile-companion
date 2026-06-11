@@ -20,7 +20,7 @@ export function SkillsPanel({ view, onShowBreakdown }: { view: CharacterView; on
           }
           value={sign(s.mod)}
           right={<RankPip rank={s.rank} />}
-          onClick={s.breakdown ? () => onShowBreakdown({ title: s.label, total: s.mod, parts: s.breakdown! }) : undefined}
+          onClick={() => onShowBreakdown({ title: s.label, total: s.mod, parts: s.breakdown ?? [], roll: { kind: "skill", slug: s.slug } })}
         />
       ))}
     </div>

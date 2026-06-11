@@ -1,8 +1,10 @@
 import { Modal } from "./parts/Modal";
 import type { ModPartView } from "../../foundry/actor/types";
+import type { RollTarget } from "../../foundry/actor/rolls";
 
-/** A breakdown request raised by tapping a stat. `totalSigned` false for AC/DCs. */
-export interface BreakdownRequest { title: string; total: number; parts: ModPartView[]; totalSigned?: boolean; }
+/** A breakdown request raised by tapping a stat. `totalSigned` false for AC/DCs.
+ *  `roll` (skills/saves/perception) makes the modal's Roll button live. */
+export interface BreakdownRequest { title: string; total: number; parts: ModPartView[]; totalSigned?: boolean; roll?: RollTarget; }
 
 const sign = (n: number) => `${n >= 0 ? "+" : ""}${n}`;
 

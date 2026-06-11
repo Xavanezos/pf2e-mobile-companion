@@ -41,8 +41,8 @@ export function VitalsPanel({ view, onInitiativeChange, onShieldHpAdjust, onMana
 
       <Section title="Defenses">
         <StatRow label="Armor Class" value={d.ac} onClick={d.acBreakdown ? () => onShowBreakdown({ title: "Armor Class", total: d.ac, parts: d.acBreakdown!, totalSigned: false }) : undefined} />
-        {d.saves.map((s) => <StatRow key={s.slug} label={s.label} value={sign(s.mod)} right={<RankPip rank={s.rank} />} onClick={s.breakdown ? () => onShowBreakdown({ title: s.label, total: s.mod, parts: s.breakdown! }) : undefined} />)}
-        <StatRow label="Perception" value={sign(d.perception.mod)} right={<RankPip rank={d.perception.rank} />} onClick={d.perception.breakdown ? () => onShowBreakdown({ title: "Perception", total: d.perception.mod, parts: d.perception.breakdown! }) : undefined} />
+        {d.saves.map((s) => <StatRow key={s.slug} label={s.label} value={sign(s.mod)} right={<RankPip rank={s.rank} />} onClick={() => onShowBreakdown({ title: s.label, total: s.mod, parts: s.breakdown ?? [], roll: { kind: "save", slug: s.slug } })} />)}
+        <StatRow label="Perception" value={sign(d.perception.mod)} right={<RankPip rank={d.perception.rank} />} onClick={() => onShowBreakdown({ title: "Perception", total: d.perception.mod, parts: d.perception.breakdown ?? [], roll: { kind: "perception" } })} />
         {d.perception.senses.length > 0 && (
           <div className="px-1 pb-2 text-xs text-zinc-400">Senses: {d.perception.senses.map((x) => x.label).join(", ")}</div>
         )}

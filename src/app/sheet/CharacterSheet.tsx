@@ -16,6 +16,7 @@ import { BioPanel } from "./BioPanel";
 import { BreakdownModal, type BreakdownRequest } from "./BreakdownModal";
 import { DetailModal } from "./DetailModal";
 import { setHeroPoints, adjustCondition, toggleCondition, setHp, setTempHp, applyDamageTo, setInitiativeStatistic, setShieldHp, setEquipped, setInvested } from "../../foundry/actor/mutations";
+import { rollTarget } from "../../foundry/actor/rolls";
 import { hpAfterHeal, hpClamped } from "../../foundry/actor/hp";
 
 export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitch?: () => void }) {
@@ -112,7 +113,13 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
           onClose={() => setEquipItemId(null)}
         />
       )}
-      {breakdown && <BreakdownModal req={breakdown} onClose={() => setBreakdown(null)} />}
+      {breakdown && (
+        <BreakdownModal
+          req={breakdown}
+          onClose={() => setBreakdown(null)}
+          onRoll={breakdown.roll ? () => rollTarget(actorId, breakdown.roll!) : undefined}
+        />
+      )}
       {detailItemId && <DetailModal actorId={actorId} itemId={detailItemId} onClose={() => setDetailItemId(null)} />}
     </>
   );
