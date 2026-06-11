@@ -38,9 +38,10 @@ export function mapDefenses(a: CharacterLike): DefensesView {
   const saves: SaveView[] = (["fortitude", "reflex", "will"] as const).map((slug) => ({
     slug, label: SAVE_LABELS[slug], mod: s.saves[slug].value, rank: s.saves[slug].rank as Rank,
   }));
+  // Only real movement types — PF2e also stuffs a derived `travel` speed in here.
   const speeds: SpeedView[] = Object.entries(s.movement?.speeds ?? {})
-    .filter(([, v]) => v && typeof v.value === "number")
-    .map(([type, v]) => ({ type, label: SPEED_LABELS[type] ?? type, value: (v as { value: number }).value }));
+    .filter(([type, v]) => type in SPEED_LABELS && v && typeof v.value === "number")
+    .map(([type, v]) => ({ type, label: SPEED_LABELS[type], value: (v as { value: number }).value }));
   const classDCs = Object.values(s.proficiencies?.classDCs ?? {}).map((c) => ({
     slug: c.slug, label: c.label, value: c.value, rank: c.rank as Rank, primary: c.primary,
   }));

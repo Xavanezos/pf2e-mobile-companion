@@ -34,9 +34,9 @@ describe("mapDefenses", () => {
     expect(d.shield).toEqual({ ac: 2, hp: { value: 12, max: 12 }, hardness: 5, broken: false, raised: true });
   });
 
-  it("lists every present movement speed", () => {
+  it("lists real movement speeds only, excluding derived ones like travel", () => {
     const a = makeCharacterLike();
-    a.system.movement = { speeds: { land: { value: 25 }, fly: { value: 30 }, swim: undefined } };
+    a.system.movement = { speeds: { land: { value: 25 }, fly: { value: 30 }, swim: undefined, travel: { value: 25 } } };
     expect(mapDefenses(a).speeds).toEqual([
       { type: "land", label: "Land", value: 25 },
       { type: "fly", label: "Fly", value: 30 },
