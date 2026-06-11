@@ -20,6 +20,19 @@
 
 ---
 
+## Execution status (2026-06-11)
+
+**Done & committed to `main`: Tasks 2–16** — the pure data layer (`src/foundry/actor/{types,view,hp,mutations}.ts`) and the live shell (`src/app/useActor.ts` + `src/app/sheet/{VitalsHeader,SubTabBar,CharacterSheet}.tsx` + `parts/*`, wired via `SheetTab.tsx`). Tests 43/43 green; typecheck + build clean. **Resume at Task 17.** Task 1 (probe) was run live and surfaced the bulk-path error below.
+
+**Deviations applied during execution (committed; these SUPERSEDE the matching snippets above):**
+1. **Inventory bulk** — the real API is `actor.inventory.bulk` (`InventoryBulk`: `.value.normal` / `.max` / `.isEncumbered`), **not** `inventory.totalBulk` (the Explore note was wrong and crashed render). Task 2's `CharacterLike.inventory` type and Task 7's `mapInventory` were updated accordingly; the unused `attributes.encumbered` field was removed.
+2. **Speeds** — `mapDefenses` whitelists real movement types (land/fly/swim/climb/burrow); PF2e also stuffs a derived `travel` speed into `system.movement.speeds`, now excluded.
+3. **Character selector (unplanned add)** — `resolveCharacter` now returns `{ defaultId, candidates }` (defaults to the assigned/sole PC but always lists every owned PC); `SheetTab` was rewritten with a `picking` flag; new `src/app/CharacterPicker.tsx`. **`CharacterSheet`'s `onSwitch?` prop interface is unchanged**, so Tasks 17–23 apply cleanly on top of the committed Task 16 `CharacterSheet`.
+
+**To resume (new session or this one):** treat the committed source as the source of truth, then apply **Tasks 17 → 24 in order**. They modify the committed `CharacterSheet.tsx` (still the Task 16 version) and add new panel/modal files. The data-layer snippets above that mention `totalBulk` are historical — don't reapply them.
+
+---
+
 ## Task 1: API probe — confirm live getters (manual, de-risk)
 
 The mappers depend on live derived getters. Confirm their shape ONCE on a real PC before coding. No code change; this validates the `CharacterLike` contract in Task 2.
