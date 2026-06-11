@@ -1,6 +1,6 @@
 import type {
   AbilityView, CharacterLike, DefensesView, HeaderView, InitiativeOption, Rank,
-  SaveView, SpeedView, TraitsView,
+  SaveView, SkillView, SpeedView, TraitsView,
 } from "./types";
 
 export function mapHeader(a: CharacterLike): HeaderView {
@@ -71,4 +71,10 @@ export function mapTraits(a: CharacterLike): TraitsView {
     size: SIZE_LABELS[a.system.traits.size.value] ?? a.system.traits.size.value,
     immunities: iwr(at.immunities), resistances: iwr(at.resistances), weaknesses: iwr(at.weaknesses),
   };
+}
+
+export function mapSkills(a: CharacterLike): SkillView[] {
+  return Object.values(a.skills)
+    .map((s) => ({ slug: s.slug, label: s.label, mod: s.mod, rank: s.rank as Rank, armor: s.armor, lore: s.lore ?? false }))
+    .sort((x, y) => x.label.localeCompare(y.label));
 }
