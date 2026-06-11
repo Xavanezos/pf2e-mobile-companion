@@ -156,12 +156,14 @@ No new mutations to existing actor data — rolls are side effects that produce 
 
 ---
 
-## Spike result (Slice 1 — pending live verification)
+## Spike result (Slice 1 — verified 2026-06-11)
 
-**Status: unverified** — requires a running Foundry (GM on desktop + a mobile/emulated client). The render path is `src/foundry/chat/render.ts`: it calls `message.renderHTML()` and then `Hooks.callAll("renderChatMessageHTML", msg, el)` so PF2e (and modules) can bind chat-card listeners on the element we mount.
+**Outcome: B — stock apply-damage is inert on mobile; deferred to Phase 7.**
 
-**To verify:** post a chat card carrying an **Apply Damage** button into the player's visible log (e.g. a GM strike/damage roll), then tap that button in the mobile **Chat** tab.
-- **Works** (the actor's HP changes) → PF2e's listeners attach to our mounted element; Slice 2 needs no custom damage buttons.
-- **Dead or unstyled** → record the failure mode (no listener vs. broken styling); Slice 2 adds custom apply-damage buttons built from `message.rolls`/flags.
+Live-tested (GM on desktop + player on mobile). **Part A passed fully** — checks roll, results toast and land in the Chat tab, toast scoping is correct (own results only), history seeds on open, and cards are legible on dark mobile.
 
-Checks (Slice 1) produce no damage buttons, so this does **not** gate Slice 1 — it scopes Slice 2.
+**Part B:** a GM-posted damage card's **Apply Damage** button rendered but produced **no HP change**. PF2e's apply-damage applies to the **selected canvas token**, and we run canvas-off on mobile (`core.noCanvas`), so there is no token to receive it.
+
+**Decision (user):** do **not** add custom apply-damage buttons in Slice 2. Working damage application waits for **Phase 7 (battle map)**, where token selection exists — at which point the stock buttons can be revisited or wired to the tapped map token. Slice 2 strikes still post their normal attack / damage / crit cards through the chat feed; only the apply step is deferred.
+
+(Render path unchanged: `render.ts` calls `message.renderHTML()` then emits `renderChatMessageHTML` so PF2e can bind card listeners to our mounted element — the gap is the absent canvas-token target on mobile, not the feed.)
