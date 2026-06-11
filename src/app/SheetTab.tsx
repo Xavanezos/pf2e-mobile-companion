@@ -3,6 +3,7 @@ import { useAppStore } from "./store";
 import { resolveCharacter, type CharacterResolution, type MinimalGame } from "../foundry/character";
 import { useFoundryHook } from "./useFoundryHook";
 import { CharacterSheet } from "./sheet/CharacterSheet";
+import { CharacterPicker } from "./CharacterPicker";
 
 function readGame(): MinimalGame {
   return game as unknown as MinimalGame;
@@ -11,41 +12,41 @@ function readGame(): MinimalGame {
 export function SheetTab() {
   const actorId = useAppStore((s) => s.actorId);
   const setActorId = useAppStore((s) => s.setActorId);
+  const [picking, setPicking] = useState(false);
 
   const [resolution, setResolution] = useState<CharacterResolution>(() => resolveCharacter(readGame()));
   const recompute = useCallback(() => setResolution(resolveCharacter(readGame())), []);
   useFoundryHook("updateUser", recompute);
+  useFoundryHook("createActor", recompute);
+  useFoundryHook("deleteActor", recompute);
 
-  // Auto-select when the system resolves a single/assigned character.
+  // Initial default selection (assigned, or the sole owned PC). Guarded by `picking`
+  // so tapping "switch" can clear the selection without immediately re-selecting.
   useEffect(() => {
-    if (resolution.kind === "resolved") setActorId(resolution.actorId);
-  }, [resolution, setActorId]);
+    if (!actorId && !picking && resolution.defaultId) setActorId(resolution.defaultId);
+  }, [actorId, picking, resolution, setActorId]);
 
-  if (actorId) {
+  const pick = useCallback((id: string) => { setActorId(id); setPicking(false); }, [setActorId]);
+  const canSwitch = resolution.candidates.length >= 2;
+
+  if (picking) {
     return (
-      <CharacterSheet
-        actorId={actorId}
-        onSwitch={resolution.kind === "picker" ? () => setActorId(null) : undefined}
+      <CharacterPicker
+        candidates={resolution.candidates}
+        currentId={actorId}
+        onPick={pick}
+        onCancel={actorId ? () => setPicking(false) : undefined}
       />
     );
   }
 
-  if (resolution.kind === "picker") {
-    return (
-      <div className="flex flex-col gap-2 p-4">
-        <div className="text-sm text-zinc-400">Choose your character:</div>
-        {resolution.candidates.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => setActorId(c.id)}
-            className="flex items-center gap-3 rounded-lg bg-zinc-800 p-3 text-left"
-          >
-            {c.img && <img src={c.img} alt="" className="h-10 w-10 rounded object-cover" />}
-            <span className="font-medium">{c.name}</span>
-          </button>
-        ))}
-      </div>
-    );
+  if (actorId) {
+    return <CharacterSheet actorId={actorId} onSwitch={canSwitch ? () => setPicking(true) : undefined} />;
+  }
+
+  // No selection and no default → the player owns several PCs but none is assigned.
+  if (resolution.candidates.length >= 1) {
+    return <CharacterPicker candidates={resolution.candidates} currentId={null} onPick={pick} />;
   }
 
   return (

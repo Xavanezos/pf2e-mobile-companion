@@ -16,30 +16,41 @@ const actor = (id: string, over: Partial<MinimalActor> = {}): MinimalActor => ({
 });
 
 describe("resolveCharacter", () => {
-  it("uses the assigned character when present", () => {
-    expect(resolveCharacter(makeGame("hero", [actor("hero")]))).toEqual({
-      kind: "resolved",
-      actorId: "hero",
-    });
+  it("defaults to the assigned character", () => {
+    const r = resolveCharacter(makeGame("hero", [actor("hero")]));
+    expect(r.defaultId).toBe("hero");
+    expect(r.candidates.map((c) => c.id)).toEqual(["hero"]);
   });
-  it("auto-selects the single owned character", () => {
-    expect(resolveCharacter(makeGame(null, [actor("solo")]))).toEqual({
-      kind: "resolved",
-      actorId: "solo",
-    });
+
+  it("defaults to the sole owned character when none is assigned", () => {
+    const r = resolveCharacter(makeGame(null, [actor("solo")]));
+    expect(r.defaultId).toBe("solo");
+    expect(r.candidates.map((c) => c.id)).toEqual(["solo"]);
   });
-  it("returns a picker for multiple owned characters", () => {
+
+  it("has no default but lists all candidates when several are owned and none assigned", () => {
     const r = resolveCharacter(makeGame(null, [actor("a"), actor("b")]));
-    expect(r.kind).toBe("picker");
-    if (r.kind === "picker") expect(r.candidates.map((c) => c.id)).toEqual(["a", "b"]);
+    expect(r.defaultId).toBeNull();
+    expect(r.candidates.map((c) => c.id)).toEqual(["a", "b"]);
   });
+
+  it("keeps every owned PC switchable even when one is assigned", () => {
+    const r = resolveCharacter(makeGame("a", [actor("a"), actor("b"), actor("c")]));
+    expect(r.defaultId).toBe("a");
+    expect(r.candidates.map((c) => c.id)).toEqual(["a", "b", "c"]);
+  });
+
   it("ignores non-owned and non-character actors", () => {
     const r = resolveCharacter(
       makeGame(null, [actor("npc", { isOwner: false }), actor("loot", { type: "loot" })]),
     );
-    expect(r).toEqual({ kind: "none" });
+    expect(r.defaultId).toBeNull();
+    expect(r.candidates).toEqual([]);
   });
-  it("returns none when nothing is owned", () => {
-    expect(resolveCharacter(makeGame(null, []))).toEqual({ kind: "none" });
+
+  it("returns no default and no candidates when nothing is owned", () => {
+    const r = resolveCharacter(makeGame(null, []));
+    expect(r.defaultId).toBeNull();
+    expect(r.candidates).toEqual([]);
   });
 });
