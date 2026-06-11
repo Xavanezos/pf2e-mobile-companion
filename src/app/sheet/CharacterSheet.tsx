@@ -11,12 +11,9 @@ import { SkillsPanel } from "./SkillsPanel";
 import { ItemsPanel } from "./ItemsPanel";
 import { CarryTypeMenu } from "./CarryTypeMenu";
 import { FeatsPanel } from "./FeatsPanel";
+import { BioPanel } from "./BioPanel";
 import { setHeroPoints, adjustCondition, toggleCondition, setHp, setTempHp, applyDamageTo, setInitiativeStatistic, setShieldHp, setEquipped, setInvested } from "../../foundry/actor/mutations";
 import { hpAfterHeal, hpClamped } from "../../foundry/actor/hp";
-
-function PanelStub({ name }: { name: string }) {
-  return <div className="p-4 text-sm text-zinc-500">{name} panel — coming in a later task.</div>;
-}
 
 export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitch?: () => void }) {
   const subTab = useAppStore((s) => s.sheetSubTab);
@@ -85,7 +82,7 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
             />
           )}
           {subTab === "feats" && <FeatsPanel view={view} />}
-          {subTab === "bio" && <PanelStub name="Bio" />}
+          {subTab === "bio" && <BioPanel view={view} />}
         </div>
       </div>
       {hpOpen && view && (
