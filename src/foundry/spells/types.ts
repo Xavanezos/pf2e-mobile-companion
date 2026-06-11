@@ -99,6 +99,8 @@ export interface SpellcastingSheetDataLike {
   tradition?: string | null;
   statistic?: SpellStatisticLike | null;
   groups: SpellGroupLike[];
+  /** Available spells per rank for the prepare UI (prepared casters). */
+  prepList?: Record<number, { spell: SpellLike; signature?: boolean }[]> | null;
 }
 
 /** A live spellcasting entry as iterated from `actor.spellcasting`. */
@@ -147,4 +149,31 @@ export interface SpellDetailLike {
     defense?: { save?: { statistic?: string; basic?: boolean } } | null;
     description?: { value?: string };
   };
+}
+
+// ---------- spellbook (prepare / manage known) ----------
+
+export interface SpellbookOptionView {
+  id: string;
+  name: string;
+  glyph: string | null;
+  signature?: boolean;
+}
+export interface SpellbookSlotView {
+  slotIndex: number;
+  spell: { id: string; name: string; glyph: string | null } | null;
+}
+export interface SpellbookRankView {
+  id: string;
+  rank: number;
+  label: string;
+  /** Prepared casters: the slots to fill. Spontaneous: empty. */
+  slots: SpellbookSlotView[];
+  /** Prepared: spells available to prepare at this rank. Spontaneous: repertoire. */
+  known: SpellbookOptionView[];
+}
+export interface SpellbookView {
+  entryId: string;
+  kind: "prepared" | "spontaneous";
+  ranks: SpellbookRankView[];
 }

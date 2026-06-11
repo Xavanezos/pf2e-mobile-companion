@@ -12,6 +12,10 @@ import type {
   SpellDetailView,
   SpellRankView,
   SpellRowView,
+  SpellbookOptionView,
+  SpellbookRankView,
+  SpellbookSlotView,
+  SpellbookView,
   SpellsView,
   SpellUsesView,
 } from "./types";
@@ -172,4 +176,35 @@ export function buildSpellDetail(s: SpellDetailLike): SpellDetailView {
     meta,
     descriptionHtml: sys.description?.value ?? "",
   };
+}
+
+/** Pure: build the spellbook editor view. Prepared casters get slots (to fill from
+ *  `prepList`); spontaneous casters get their repertoire (to manage). */
+export function buildSpellbookView(d: SpellcastingSheetDataLike): SpellbookView {
+  const kind: "prepared" | "spontaneous" = d.isPrepared ? "prepared" : "spontaneous";
+  const ranks: SpellbookRankView[] = d.groups.map((g) => {
+    const rank = rankNumber(g.id);
+    if (d.isPrepared) {
+      const slots: SpellbookSlotView[] = g.active.map((a, i) => ({
+        slotIndex: i,
+        spell: a ? { id: a.spell.id, name: a.spell.name, glyph: spellGlyph(a.spell.system?.time?.value) } : null,
+      }));
+      const known: SpellbookOptionView[] = (d.prepList?.[rank] ?? []).map((p) => ({
+        id: p.spell.id,
+        name: p.spell.name,
+        glyph: spellGlyph(p.spell.system?.time?.value),
+      }));
+      return { id: String(g.id), rank, label: g.label, slots, known };
+    }
+    const known: SpellbookOptionView[] = g.active
+      .filter((a): a is ActiveSpellLike => a != null)
+      .map((a) => ({
+        id: a.spell.id,
+        name: a.spell.name,
+        glyph: spellGlyph(a.spell.system?.time?.value),
+        signature: a.signature ?? false,
+      }));
+    return { id: String(g.id), rank, label: g.label, slots: [], known };
+  });
+  return { entryId: d.id, kind, ranks };
 }
