@@ -42,7 +42,15 @@ export function setInitiativeStatistic(actorId: string, statistic: string): Prom
   return guard(() => getActor(actorId)!.update({ "system.initiative.statistic": statistic }));
 }
 export function setShieldHp(actorId: string, value: number): Promise<void> {
-  return guard(() => getActor(actorId)!.update({ "system.attributes.shield.hp.value": value }));
+  // `system.attributes.shield` is DERIVED from the equipped shield item each
+  // prepare cycle, so writing it on the actor is discarded. Update the item.
+  return guard(() => {
+    const a = getActor(actorId)! as ActorDoc & { system?: { attributes?: { shield?: { itemId?: string | null } } } };
+    const itemId = a.system?.attributes?.shield?.itemId;
+    const item = itemId ? a.items!.get(itemId) : undefined;
+    if (!item) throw new Error("No equipped shield to update");
+    return item.update({ "system.hp.value": value });
+  });
 }
 export function toggleCondition(actorId: string, slug: string): Promise<void> {
   return guard(() => getActor(actorId)!.toggleCondition!(slug));
