@@ -221,10 +221,17 @@ export function mapFeats(a: CharacterLike): FeatGroupView[] {
   );
 }
 
-function mapProficiencies(rec?: Record<string, { label: string; rank: number; visible?: boolean }>): ProficiencyView[] {
-  return Object.values(rec ?? {})
-    .filter((p) => p.visible !== false)
-    .map((p) => ({ label: p.label, rank: p.rank as Rank }));
+/** Title-case a proficiency record key, e.g. "light-barding" → "Light Barding". */
+function titleCaseKey(key: string): string {
+  return key.split(/[-_]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
+function mapProficiencies(rec?: Record<string, { label?: string; rank: number; visible?: boolean }>): ProficiencyView[] {
+  // Live PF2e keys these by name (simple/martial/unarmored/…) with NO `label`
+  // field — derive the label from the key when it's absent.
+  return Object.entries(rec ?? {})
+    .filter(([, p]) => p.visible !== false)
+    .map(([key, p]) => ({ label: p.label || titleCaseKey(key), rank: p.rank as Rank }));
 }
 
 export function mapBio(a: CharacterLike): BioView {

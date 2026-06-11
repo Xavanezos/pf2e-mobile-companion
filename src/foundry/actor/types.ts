@@ -204,8 +204,8 @@ export interface CharacterLike {
     resources: { heroPoints: { value: number; max: number } };
     proficiencies?: {
       classDCs?: Record<string, { value: number; rank: number; slug: string; primary: boolean; label: string; modifiers?: ModifierLike[] }>;
-      attacks?: Record<string, { label: string; rank: number; visible?: boolean }>;
-      defenses?: Record<string, { label: string; rank: number; visible?: boolean }>;
+      attacks?: Record<string, { label?: string; rank: number; visible?: boolean }>;
+      defenses?: Record<string, { label?: string; rank: number; visible?: boolean }>;
     };
     traits: { size: { value: string } };
   };
