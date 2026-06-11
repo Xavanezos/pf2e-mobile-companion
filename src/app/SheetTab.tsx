@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAppStore } from "./store";
 import { resolveCharacter, type CharacterResolution, type MinimalGame } from "../foundry/character";
 import { useFoundryHook } from "./useFoundryHook";
+import { CharacterSheet } from "./sheet/CharacterSheet";
 
 function readGame(): MinimalGame {
   return game as unknown as MinimalGame;
@@ -21,22 +22,11 @@ export function SheetTab() {
   }, [resolution, setActorId]);
 
   if (actorId) {
-    const actor = (game as any).actors.get(actorId);
     return (
-      <div className="flex flex-col items-center gap-3 p-4">
-        {actor?.img && (
-          <img src={actor.img} alt="" className="h-28 w-28 rounded-lg object-cover" />
-        )}
-        <div className="text-xl font-semibold">{actor?.name ?? "Unknown actor"}</div>
-        <div className="rounded bg-zinc-800 px-3 py-2 text-sm text-zinc-400">
-          Live character sheet arrives in Phase 2.
-        </div>
-        {resolution.kind === "picker" && (
-          <button className="text-sm text-indigo-400 underline" onClick={() => setActorId(null)}>
-            Switch character
-          </button>
-        )}
-      </div>
+      <CharacterSheet
+        actorId={actorId}
+        onSwitch={resolution.kind === "picker" ? () => setActorId(null) : undefined}
+      />
     );
   }
 
