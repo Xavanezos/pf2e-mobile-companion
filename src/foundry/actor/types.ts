@@ -4,6 +4,9 @@
 /** Proficiency rank: Untrained..Legendary. */
 export type Rank = 0 | 1 | 2 | 3 | 4;
 
+/** One line of a modifier breakdown popup (#5): "Proficiency +9". */
+export interface ModPartView { label: string; value: number; }
+
 // ---------- View (what the UI renders) ----------
 
 export interface HpView { value: number; temp: number; max: number; }
@@ -24,19 +27,20 @@ export interface HeaderView {
   speed: number;
 }
 
-export interface SaveView { slug: "fortitude" | "reflex" | "will"; label: string; mod: number; rank: Rank; }
+export interface SaveView { slug: "fortitude" | "reflex" | "will"; label: string; mod: number; rank: Rank; breakdown?: ModPartView[]; }
 export interface SenseView { label: string; }
 export interface SpeedView { type: string; label: string; value: number; }
-export interface ClassDcView { slug: string; label: string; value: number; rank: Rank; primary: boolean; }
+export interface ClassDcView { slug: string; label: string; value: number; rank: Rank; primary: boolean; breakdown?: ModPartView[]; }
 export interface ShieldView { ac: number; hp: { value: number; max: number }; hardness: number; broken: boolean; raised: boolean; }
 export interface InitiativeOption { value: string; label: string; }
 export interface InitiativeView { mod: number; statistic: string; options: InitiativeOption[]; }
 
 export interface DefensesView {
   ac: number;
+  acBreakdown?: ModPartView[];
   shield?: ShieldView;
   saves: SaveView[];
-  perception: { mod: number; rank: Rank; senses: SenseView[] };
+  perception: { mod: number; rank: Rank; senses: SenseView[]; breakdown?: ModPartView[] };
   initiative: InitiativeView;
   classDCs: ClassDcView[];
   speeds: SpeedView[];
@@ -48,7 +52,7 @@ export interface AbilityView { slug: string; label: string; mod: number; key: bo
 export interface IwrView { label: string; }
 export interface TraitsView { size: string; immunities: IwrView[]; resistances: IwrView[]; weaknesses: IwrView[]; }
 
-export interface SkillView { slug: string; label: string; mod: number; rank: Rank; armor: boolean; lore: boolean; }
+export interface SkillView { slug: string; label: string; mod: number; rank: Rank; armor: boolean; lore: boolean; breakdown?: ModPartView[]; }
 
 export interface ConditionView { slug: string; name: string; value: number | null; img?: string; locked: boolean; }
 export interface EffectView { name: string; img?: string; badge: string | null; }
@@ -106,7 +110,9 @@ export interface CharacterView {
 // via `actor as unknown as CharacterLike` at the call site.
 
 export interface IwrLike { label: string; value?: number; }
-export interface SkillLike { slug: string; label: string; mod: number; rank: number; armor: boolean; lore?: boolean; }
+/** A live PF2e modifier (from a StatisticModifier/Statistic) for breakdowns (#5). */
+export interface ModifierLike { label: string; modifier: number; enabled?: boolean; type?: string; }
+export interface SkillLike { slug: string; label: string; mod: number; rank: number; armor: boolean; lore?: boolean; modifiers?: ModifierLike[]; check?: { modifiers?: ModifierLike[] }; }
 export interface ConditionLike { slug: string; name: string; value: number | null; img?: string; isLocked?: boolean; }
 export interface EffectLike { name: string; img?: string; badge?: { value?: number; label?: string } | null; }
 
@@ -152,7 +158,7 @@ export interface CharacterLike {
     };
     attributes: {
       hp: { value: number; temp: number; max: number };
-      ac: { value: number };
+      ac: { value: number; modifiers?: ModifierLike[] };
       dying: { value: number; max: number };
       wounded: { value: number };
       shield?: { itemId: string | null; ac: number; hp: { value: number; max: number }; hardness: number; broken: boolean; raised?: boolean };
@@ -160,14 +166,14 @@ export interface CharacterLike {
       resistances?: IwrLike[];
       weaknesses?: IwrLike[];
     };
-    saves: Record<"fortitude" | "reflex" | "will", { value: number; rank: number }>;
-    perception: { value: number; rank: number; senses: { label?: string; type?: string }[] };
+    saves: Record<"fortitude" | "reflex" | "will", { value: number; rank: number; modifiers?: ModifierLike[] }>;
+    perception: { value: number; rank: number; senses: { label?: string; type?: string }[]; modifiers?: ModifierLike[] };
     initiative: { totalModifier: number; statistic: string };
     movement?: { speeds: Record<string, { value: number } | undefined> };
     abilities: Record<"str" | "dex" | "con" | "int" | "wis" | "cha", { mod: number }>;
     resources: { heroPoints: { value: number; max: number } };
     proficiencies?: {
-      classDCs?: Record<string, { value: number; rank: number; slug: string; primary: boolean; label: string }>;
+      classDCs?: Record<string, { value: number; rank: number; slug: string; primary: boolean; label: string; modifiers?: ModifierLike[] }>;
       attacks?: Record<string, { label: string; rank: number; visible?: boolean }>;
       defenses?: Record<string, { label: string; rank: number; visible?: boolean }>;
     };

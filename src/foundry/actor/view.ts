@@ -1,8 +1,17 @@
 import type {
   AbilityView, CharacterLike, ConditionView, CoinsView, DefensesView, EffectView, HeaderView,
   InitiativeOption, InventoryCategoryView, InventoryItemLike, InventoryItemView, InventoryView,
-  BioView, CharacterView, FeatGroupView, FeatView, ProficiencyView, Rank, SaveView, SkillView, SpeedView, TraitsView,
+  BioView, CharacterView, FeatGroupView, FeatView, ModifierLike, ModPartView, ProficiencyView, Rank, SaveView, SkillView, SpeedView, TraitsView,
 } from "./types";
+
+/** Extract a modifier breakdown from a live PF2e statistic (#5). Defensive:
+ *  handles StatisticModifier (`.modifiers`) and Statistic (`.check.modifiers`);
+ *  a missing array yields []. Enabled modifiers only. */
+function readBreakdown(stat: { modifiers?: ModifierLike[]; check?: { modifiers?: ModifierLike[] } } | undefined): ModPartView[] | undefined {
+  const mods = stat?.modifiers ?? stat?.check?.modifiers ?? [];
+  const parts = mods.filter((m) => m.enabled !== false).map((m) => ({ label: m.label, value: m.modifier }));
+  return parts.length ? parts : undefined;
+}
 
 export function mapHeader(a: CharacterLike): HeaderView {
   const s = a.system;
@@ -37,6 +46,7 @@ export function mapDefenses(a: CharacterLike): DefensesView {
   const sh = s.attributes.shield;
   const saves: SaveView[] = (["fortitude", "reflex", "will"] as const).map((slug) => ({
     slug, label: SAVE_LABELS[slug], mod: s.saves[slug].value, rank: s.saves[slug].rank as Rank,
+    breakdown: readBreakdown(s.saves[slug]),
   }));
   // Only real movement types — PF2e also stuffs a derived `travel` speed in here.
   const speeds: SpeedView[] = Object.entries(s.movement?.speeds ?? {})
@@ -44,15 +54,18 @@ export function mapDefenses(a: CharacterLike): DefensesView {
     .map(([type, v]) => ({ type, label: SPEED_LABELS[type], value: (v as { value: number }).value }));
   const classDCs = Object.values(s.proficiencies?.classDCs ?? {}).map((c) => ({
     slug: c.slug, label: c.label, value: c.value, rank: c.rank as Rank, primary: c.primary,
+    breakdown: readBreakdown(c),
   }));
   return {
     ac: s.attributes.ac.value,
+    acBreakdown: readBreakdown(s.attributes.ac),
     shield: sh && sh.itemId
       ? { ac: sh.ac, hp: { value: sh.hp.value, max: sh.hp.max }, hardness: sh.hardness, broken: sh.broken, raised: sh.raised ?? false }
       : undefined,
     saves,
     perception: { mod: s.perception.value, rank: s.perception.rank as Rank,
-      senses: s.perception.senses.map((x) => ({ label: x.label ?? x.type ?? "" })).filter((x) => x.label) },
+      senses: s.perception.senses.map((x) => ({ label: x.label ?? x.type ?? "" })).filter((x) => x.label),
+      breakdown: readBreakdown(s.perception) },
     initiative: { mod: s.initiative.totalModifier, statistic: s.initiative.statistic, options: initiativeOptions(a) },
     classDCs,
     speeds,
@@ -77,7 +90,7 @@ export function mapTraits(a: CharacterLike): TraitsView {
 
 export function mapSkills(a: CharacterLike): SkillView[] {
   return Object.values(a.skills)
-    .map((s) => ({ slug: s.slug, label: s.label, mod: s.mod, rank: s.rank as Rank, armor: s.armor, lore: s.lore ?? false }))
+    .map((s) => ({ slug: s.slug, label: s.label, mod: s.mod, rank: s.rank as Rank, armor: s.armor, lore: s.lore ?? false, breakdown: readBreakdown(s) }))
     .sort((x, y) => x.label.localeCompare(y.label));
 }
 
