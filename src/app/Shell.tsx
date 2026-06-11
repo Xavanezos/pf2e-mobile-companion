@@ -7,7 +7,9 @@ import { setUiMode } from "../foundry/settings";
 export function Shell() {
   const { isFullscreen, toggle } = useFullscreen();
   const actorId = useAppStore((s) => s.actorId);
-  const title = actorId ? ((game as any).actors.get(actorId)?.name ?? "PF2e Mobile") : "PF2e Mobile";
+  const title = actorId
+    ? ((game as any).actors.get(actorId)?.name ?? "PF2e Mobile")
+    : "PF2e Mobile";
 
   return (
     <div className="flex h-full w-full flex-col">
@@ -22,7 +24,10 @@ export function Shell() {
             aria-label="Toggle fullscreen"
             className="flex h-10 w-10 items-center justify-center text-zinc-300"
           >
-            <i className={`fas ${isFullscreen ? "fa-compress" : "fa-expand"}`} aria-hidden="true" />
+            <i
+              className={`fas ${isFullscreen ? "fa-compress" : "fa-expand"}`}
+              aria-hidden="true"
+            />
           </button>
           <button
             onClick={() => void setUiMode("off")}

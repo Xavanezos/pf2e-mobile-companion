@@ -22,18 +22,20 @@ A Foundry VTT module that replaces the Foundry UI on mobile Chrome with a fast, 
 
 ---
 
-## Phase 1 — Mobile takeover shell
+## Phase 1 — Mobile takeover shell ✅ Done (2026-06-11)
 
-- [ ] Mobile detection: user agent + viewport width check, plus a manual override (client setting "Force mobile UI on/off") so you can test on desktop and players can opt out.
-- [ ] On `ready` hook, when mobile mode is active:
-  - [ ] Force-disable the game canvas. Foundry has a core client setting (`core.noCanvas`) — set it and reload once if needed, or suppress canvas rendering. Verify memory/CPU drop in DevTools.
-  - [ ] Hide the stock UI (`#interface`, `#ui-left`, etc.) via CSS class on `<body>`.
-  - [ ] Mount the React root into a full-screen container.
-- [ ] App shell: bottom tab navigation — **Sheet / Actions / Combat / Journal / Map**. Mobile-first CSS, large touch targets, dark theme (players will use this at a table, possibly in dim light).
-- [ ] State plumbing: a small Zustand store. Write a generic `useFoundryHook(hookName, handler)` React hook that registers/unregisters Foundry hooks on mount/unmount. This is the backbone of the whole app.
-- [ ] Resolve "my character": `game.user.character` first, fall back to a picker of actors the user owns (`game.actors.filter(a => a.isOwner)`).
+> Spec: `docs/superpowers/specs/2026-06-11-phase-1-mobile-takeover-shell-design.md` · Plan: `docs/superpowers/plans/2026-06-11-phase-1-mobile-takeover-shell.md`. Styling: Tailwind v4 (no preflight). Tests: Vitest (15 passing) for the pure logic; DOM/hook integration verified manually.
 
-**Milestone:** player on mobile sees an empty tabbed app instead of Foundry's UI; GM on desktop is unaffected.
+- [x] Mobile detection: user agent + viewport width check, plus a manual override (client setting "Mobile UI mode": Automatic / Always on / Always off) so you can test on desktop and players can opt out.
+- [x] On `ready` hook, when mobile mode is active:
+  - [x] Force-disable the game canvas via `core.noCanvas` (saves the prior value, sets it, one-time guarded reload; restored on exit). Verify memory/CPU drop in DevTools.
+  - [x] Hide the stock UI (`#interface`, `#ui-left`, etc.) via the `pf2e-mobile-active` class on `<body>`.
+  - [x] Mount the React root into a full-screen container.
+- [x] App shell: bottom tab navigation — **Sheet / Actions / Combat / Journal / Map**. Mobile-first CSS, large touch targets, dark theme. Plus a header with fullscreen + escape-to-desktop controls.
+- [x] State plumbing: a small Zustand store + a generic `useFoundryHook(hookName, handler)` React hook that registers/unregisters Foundry hooks on mount/unmount. This is the backbone of the whole app.
+- [x] Resolve "my character": `game.user.character` first, fall back to a picker of owned `character`-type actors (auto-selects when there's exactly one; empty state when none).
+
+**Milestone:** ✅ player on mobile sees an empty tabbed app instead of Foundry's UI; GM on desktop is unaffected.
 
 ---
 
