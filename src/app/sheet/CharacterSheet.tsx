@@ -14,6 +14,7 @@ import { FeatsPanel } from "./FeatsPanel";
 import { ProfsPanel } from "./ProfsPanel";
 import { BioPanel } from "./BioPanel";
 import { BreakdownModal, type BreakdownRequest } from "./BreakdownModal";
+import { DetailModal } from "./DetailModal";
 import { setHeroPoints, adjustCondition, toggleCondition, setHp, setTempHp, applyDamageTo, setInitiativeStatistic, setShieldHp, setEquipped, setInvested } from "../../foundry/actor/mutations";
 import { hpAfterHeal, hpClamped } from "../../foundry/actor/hp";
 
@@ -37,6 +38,7 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
   const [condOpen, setCondOpen] = useState(false);
   const [equipItemId, setEquipItemId] = useState<string | null>(null);
   const [breakdown, setBreakdown] = useState<BreakdownRequest | null>(null);
+  const [detailItemId, setDetailItemId] = useState<string | null>(null);
   const onHpSubmit = useCallback((mode: HpMode, amount: number) => {
     if (!view) return;
     if (mode === "damage") applyDamageTo(actorId, amount);
@@ -75,6 +77,7 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
               onShieldHpAdjust={(dlt) => view.defenses.shield && setShieldHp(actorId, hpClamped(view.defenses.shield.hp.value + dlt, view.defenses.shield.hp.max))}
               onManageConditions={() => setCondOpen(true)}
               onShowBreakdown={setBreakdown}
+              onShowDetail={setDetailItemId}
             />
           )}
           {subTab === "skills" && <SkillsPanel view={view} onShowBreakdown={setBreakdown} />}
@@ -83,9 +86,10 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
               view={view}
               onEquipTap={(id) => setEquipItemId(id)}
               onInvestToggle={(id, next) => setInvested(actorId, id, next)}
+              onShowDetail={setDetailItemId}
             />
           )}
-          {subTab === "feats" && <FeatsPanel view={view} />}
+          {subTab === "feats" && <FeatsPanel view={view} onShowDetail={setDetailItemId} />}
           {subTab === "profs" && <ProfsPanel view={view} />}
           {subTab === "bio" && <BioPanel view={view} />}
         </div>
@@ -109,6 +113,7 @@ export function CharacterSheet({ actorId, onSwitch }: { actorId: string; onSwitc
         />
       )}
       {breakdown && <BreakdownModal req={breakdown} onClose={() => setBreakdown(null)} />}
+      {detailItemId && <DetailModal actorId={actorId} itemId={detailItemId} onClose={() => setDetailItemId(null)} />}
     </>
   );
 }

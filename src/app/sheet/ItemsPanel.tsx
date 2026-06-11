@@ -1,20 +1,23 @@
 import type { CharacterView, InventoryItemView } from "../../foundry/actor/types";
 
-function ItemRow({ item, onEquipTap, onInvestToggle }: {
+function ItemRow({ item, onEquipTap, onInvestToggle, onShowDetail }: {
   item: InventoryItemView;
   onEquipTap: (id: string) => void;
   onInvestToggle: (id: string, next: boolean) => void;
+  onShowDetail: (id: string) => void;
 }) {
   return (
     <div className="flex items-center gap-2 px-3 py-2">
-      {item.img && <img src={item.img} alt="" className="h-8 w-8 rounded object-cover" />}
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium">
-          {item.name}{item.quantity > 1 ? <span className="text-zinc-400"> ×{item.quantity}</span> : null}
-          {item.isContainer ? <i className="fas fa-box-archive ml-1 text-[10px] text-zinc-500" aria-hidden="true" /> : null}
+      <button onClick={() => onShowDetail(item.id)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+        {item.img && <img src={item.img} alt="" className="h-8 w-8 rounded object-cover" />}
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-medium">
+            {item.name}{item.quantity > 1 ? <span className="text-zinc-400"> ×{item.quantity}</span> : null}
+            {item.isContainer ? <i className="fas fa-box-archive ml-1 text-[10px] text-zinc-500" aria-hidden="true" /> : null}
+          </div>
+          <div className="text-[11px] text-zinc-500">Bulk {item.bulkLabel} · {item.priceLabel}</div>
         </div>
-        <div className="text-[11px] text-zinc-500">Bulk {item.bulkLabel} · {item.priceLabel}</div>
-      </div>
+      </button>
       {item.invested !== null && (
         <button onClick={() => onInvestToggle(item.id, !item.invested)}
           aria-label="Toggle invested"
@@ -30,10 +33,11 @@ function ItemRow({ item, onEquipTap, onInvestToggle }: {
   );
 }
 
-export function ItemsPanel({ view, onEquipTap, onInvestToggle }: {
+export function ItemsPanel({ view, onEquipTap, onInvestToggle, onShowDetail }: {
   view: CharacterView;
   onEquipTap: (id: string) => void;
   onInvestToggle: (id: string, next: boolean) => void;
+  onShowDetail: (id: string) => void;
 }) {
   const inv = view.inventory;
   return (
@@ -50,7 +54,7 @@ export function ItemsPanel({ view, onEquipTap, onInvestToggle }: {
         <section key={cat.key}>
           <h3 className="bg-zinc-900/60 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">{cat.label}</h3>
           <div className="divide-y divide-zinc-800">
-            {cat.items.map((it) => <ItemRow key={it.id} item={it} onEquipTap={onEquipTap} onInvestToggle={onInvestToggle} />)}
+            {cat.items.map((it) => <ItemRow key={it.id} item={it} onEquipTap={onEquipTap} onInvestToggle={onInvestToggle} onShowDetail={onShowDetail} />)}
           </div>
         </section>
       ))}
