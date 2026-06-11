@@ -1,36 +1,52 @@
+import { registerSettings, isMobileActive } from "./foundry/settings";
+import { applyTakeover, removeTakeover, isTakeoverActive } from "./foundry/takeover";
+
 const MODULE_ID = "pf2e-mobile-companion";
 
 // Hooks are registered synchronously at module-eval time so they exist before
-// Foundry fires `init`. The React app (App.tsx) is imported lazily inside the
-// `ready` handler — never statically — because in dev it carries
-// @vitejs/plugin-react's Fast Refresh guard, which throws unless the Refresh
-// preamble has been installed first (see installReactRefreshPreamble).
+// Foundry fires `init`.
 Hooks.once("init", () => {
-  console.log(`${MODULE_ID} | init hook fired — module loaded`);
+  console.log(`${MODULE_ID} | init`);
+  registerSettings(() => {
+    void onUiModeChange();
+  });
 });
 
 Hooks.once("ready", async () => {
-  console.log(`${MODULE_ID} | ready hook fired — mounting React app`);
-
+  if (!isMobileActive()) {
+    console.log(`${MODULE_ID} | desktop mode — leaving Foundry UI intact`);
+    return;
+  }
+  console.log(`${MODULE_ID} | mobile mode — taking over`);
   await installReactRefreshPreamble();
+  await applyTakeover(mountApp);
+});
 
+/** Re-evaluate when the user flips the UI-mode setting at runtime. */
+async function onUiModeChange(): Promise<void> {
+  const shouldBeMobile = isMobileActive();
+  const active = isTakeoverActive();
+  if (shouldBeMobile && !active) {
+    await installReactRefreshPreamble();
+    await applyTakeover(mountApp);
+  } else if (!shouldBeMobile && active) {
+    await removeTakeover();
+  }
+}
+
+/** Lazily import React + the app (kept out of static imports so the dev Fast
+ *  Refresh preamble is installed first). */
+async function mountApp(container: HTMLElement): Promise<void> {
   const { createElement } = await import("react");
   const { createRoot } = await import("react-dom/client");
   const { App } = await import("./app/App");
-
-  document.getElementById(`${MODULE_ID}-root`)?.remove();
-  const container = document.createElement("div");
-  container.id = `${MODULE_ID}-root`;
-  document.body.appendChild(container);
-
   createRoot(container).render(createElement(App));
-});
+}
 
 /**
- * Vite normally injects @vitejs/plugin-react's Fast Refresh preamble into
- * index.html. Foundry serves its own HTML, so we install it ourselves before
- * any React component module loads. Dev-only: `import.meta.env.DEV` is false in
- * production builds, so this whole block is stripped.
+ * Vite injects @vitejs/plugin-react's Fast Refresh preamble into index.html;
+ * Foundry serves its own HTML, so we install it ourselves before any React
+ * module loads. Dev-only — stripped from production builds.
  */
 async function installReactRefreshPreamble(): Promise<void> {
   if (!import.meta.env.DEV) return;
