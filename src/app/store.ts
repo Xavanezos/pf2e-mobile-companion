@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type TabId = "sheet" | "actions" | "combat" | "journal" | "map";
+export type TabId = "sheet" | "actions" | "combat" | "chat" | "journal" | "map";
 export type SheetSubTab = "vitals" | "skills" | "items" | "feats" | "profs" | "bio";
 
 export interface AppState {
