@@ -55,7 +55,7 @@ export interface ActivationView {
 
 export interface SpellsView {
   entries: SpellEntryView[];
-  rituals: SpellRowView[];
+  ritualRanks: SpellRankView[];
   activations: ActivationView[];
   focus: { value: number; max: number } | null;
 }
@@ -111,6 +111,15 @@ export interface SpellcastingEntryRuntime {
 export interface SpellcastingActorLike {
   system?: { resources?: { focus?: { value?: number; max?: number } } };
   spellcasting?: Iterable<SpellcastingEntryRuntime>;
+  itemTypes?: { consumable?: ActivationItemLike[] };
+}
+
+/** A consumable (wand/scroll) carrying an embedded spell — the Activations list. */
+export interface ActivationItemLike {
+  id: string;
+  name: string;
+  img?: string;
+  system?: { spell?: { name?: string } | null; uses?: { value?: number; max?: number } };
 }
 
 // ---------- spell detail (tap-for-info popup) ----------

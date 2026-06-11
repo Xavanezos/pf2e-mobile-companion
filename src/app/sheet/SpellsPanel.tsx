@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useSpells } from "./useSpells";
 import { SpellEntryCard } from "./spells/SpellEntryCard";
+import { SpellRow } from "./spells/SpellRow";
 import { SpellDetailModal } from "./spells/SpellDetailModal";
-import { castSpell } from "../../foundry/spells/cast";
+import { castSpell, castRitual, consumeActivation } from "../../foundry/spells/cast";
 import type { SpellEntryView, SpellRowView } from "../../foundry/spells/types";
 
 type Section = "known" | "rituals" | "activations";
@@ -24,7 +25,7 @@ export function SpellsPanel({ actorId }: { actorId: string }) {
 
   if (view === null) return <div className="p-4 text-sm text-zinc-500">Loading spells…</div>;
 
-  const empty = view.entries.length === 0 && view.rituals.length === 0 && view.activations.length === 0;
+  const empty = view.entries.length === 0 && view.ritualRanks.length === 0 && view.activations.length === 0;
   if (empty) return <div className="p-4 text-sm text-zinc-500">No spellcasting.</div>;
 
   return (
@@ -50,8 +51,54 @@ export function SpellsPanel({ actorId }: { actorId: string }) {
           view.entries.map((e) => <SpellEntryCard key={e.id} entry={e} onCast={onCast} onDetail={setDetailSpellId} />)
         ))}
 
-      {section === "rituals" && <div className="p-4 text-sm text-zinc-500">No rituals.</div>}
-      {section === "activations" && <div className="p-4 text-sm text-zinc-500">No activations.</div>}
+      {section === "rituals" &&
+        (view.ritualRanks.length === 0 ? (
+          <div className="p-4 text-sm text-zinc-500">No rituals.</div>
+        ) : (
+          view.ritualRanks.map((r) => (
+            <div key={r.id}>
+              <div className="px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">{r.label}</div>
+              <div className="divide-y divide-zinc-800">
+                {r.spells.map((s) => (
+                  <SpellRow
+                    key={s.id}
+                    spell={s}
+                    onDetail={() => setDetailSpellId(s.id)}
+                    onCast={() => void castRitual(actorId, s.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          ))
+        ))}
+
+      {section === "activations" &&
+        (view.activations.length === 0 ? (
+          <div className="p-4 text-sm text-zinc-500">No activations.</div>
+        ) : (
+          <div className="divide-y divide-zinc-800">
+            {view.activations.map((a) => (
+              <div key={a.id} className="flex items-center gap-2 px-3 py-2">
+                {a.img && <img src={a.img} alt="" className="h-7 w-7 rounded object-cover" />}
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm">{a.name}</div>
+                  {a.spellName && <div className="truncate text-[11px] text-zinc-400">{a.spellName}</div>}
+                </div>
+                {a.uses && (
+                  <span className="shrink-0 text-xs text-zinc-400">
+                    {a.uses.value}/{a.uses.max}
+                  </span>
+                )}
+                <button
+                  onClick={() => void consumeActivation(actorId, a.id)}
+                  className="shrink-0 rounded-md bg-indigo-600 px-3 py-1 text-xs font-semibold text-white"
+                >
+                  Cast
+                </button>
+              </div>
+            ))}
+          </div>
+        ))}
 
       {detailSpellId && (
         <SpellDetailModal actorId={actorId} spellId={detailSpellId} onClose={() => setDetailSpellId(null)} />

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mapSpellcastingEntry } from "../src/foundry/spells/view";
+import { mapSpellcastingEntry, mapActivations } from "../src/foundry/spells/view";
 import type { SpellcastingSheetDataLike } from "../src/foundry/spells/types";
 
 const spell = (id: string, name: string, time = "2", level = 1) => ({
@@ -83,5 +83,17 @@ describe("mapSpellcastingEntry", () => {
     expect(v.kind).toBe("focus");
     expect(v.ranks[0].uses).toEqual({ value: 1, max: 2 });
     expect(v.ranks[0].spells[0]).toMatchObject({ id: "f1", glyph: "1" });
+  });
+});
+
+describe("mapActivations", () => {
+  it("maps consumables with embedded spells and skips those without", () => {
+    const acts = mapActivations([
+      { id: "w1", name: "Wand of Magic Missile", img: "w.webp", system: { spell: { name: "Magic Missile" }, uses: { value: 1, max: 1 } } },
+      { id: "potion", name: "Healing Potion", system: {} },
+    ]);
+    expect(acts).toEqual([
+      { id: "w1", name: "Wand of Magic Missile", img: "w.webp", spellName: "Magic Missile", glyph: null, uses: { value: 1, max: 1 } },
+    ]);
   });
 });

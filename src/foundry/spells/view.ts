@@ -1,4 +1,6 @@
 import type {
+  ActivationItemLike,
+  ActivationView,
   ActiveSpellLike,
   SpellcastingActorLike,
   SpellcastingSheetDataLike,
@@ -102,15 +104,40 @@ function readFocus(actor: SpellcastingActorLike): { value: number; max: number }
 
 /** Async glue: build the full spells view from a live actor. Awaits each regular
  *  entry's `getSheetData()`. Rituals + item activations are filled in Slice B. */
+/** Consumables (wands/scrolls) that carry an embedded spell → the Activations
+ *  list. Casting goes through `item.consume()` (handles the cast + charge spend). */
+export function mapActivations(items: ActivationItemLike[]): ActivationView[] {
+  return items
+    .filter((it) => !!it.system?.spell)
+    .map((it) => ({
+      id: it.id,
+      name: it.name,
+      img: it.img,
+      spellName: it.system?.spell?.name ?? null,
+      glyph: null,
+      uses:
+        it.system?.uses && it.system.uses.max != null
+          ? { value: it.system.uses.value ?? 0, max: it.system.uses.max }
+          : null,
+    }));
+}
+
 export async function buildSpellsView(actor: SpellcastingActorLike): Promise<SpellsView> {
   const focus = readFocus(actor);
   const entries: SpellEntryView[] = [];
+  let ritualRanks: SpellRankView[] = [];
   for (const entry of actor.spellcasting ?? []) {
-    if (!entry || entry.isRitual || entry.category === "ritual" || entry.category === "items") continue;
+    if (!entry) continue;
+    if (entry.isRitual || entry.category === "ritual") {
+      const data = await entry.getSheetData?.();
+      if (data) ritualRanks = mapSpellcastingEntry(data as SpellcastingSheetDataLike, null).ranks;
+      continue;
+    }
+    if (entry.category === "items") continue; // activations come from items below
     const data = await entry.getSheetData?.();
     if (data) entries.push(mapSpellcastingEntry(data as SpellcastingSheetDataLike, focus));
   }
-  return { entries, rituals: [], activations: [], focus };
+  return { entries, ritualRanks, activations: mapActivations(actor.itemTypes?.consumable ?? []), focus };
 }
 
 function formatArea(area: { type?: string; value?: number }): string {
