@@ -1,5 +1,6 @@
 import type { SpellEntryView, SpellRowView } from "../../../foundry/spells/types";
 import { SpellRow } from "./SpellRow";
+import { loc } from "../../../foundry/i18n";
 
 const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
@@ -41,7 +42,7 @@ export function SpellEntryCard({
       {entry.ranks.map((r) => (
         <div key={r.id}>
           <div className="flex items-center justify-between px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">
-            <span>{r.label}</span>
+            <span>{loc(r.label)}</span>
             {r.uses && (
               <span className="text-zinc-400">
                 {r.uses.value ?? "∞"}/{r.uses.max}

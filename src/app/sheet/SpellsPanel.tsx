@@ -6,6 +6,7 @@ import { SpellDetailModal } from "./spells/SpellDetailModal";
 import { SpellbookModal } from "./spells/SpellbookModal";
 import { castSpell, castRitual, consumeActivation } from "../../foundry/spells/cast";
 import type { SpellEntryView, SpellRowView } from "../../foundry/spells/types";
+import { loc } from "../../foundry/i18n";
 
 type Section = "known" | "rituals" | "activations";
 const SECTIONS: { id: Section; label: string }[] = [
@@ -67,7 +68,7 @@ export function SpellsPanel({ actorId }: { actorId: string }) {
         ) : (
           view.ritualRanks.map((r) => (
             <div key={r.id}>
-              <div className="px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">{r.label}</div>
+              <div className="px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">{loc(r.label)}</div>
               <div className="divide-y divide-zinc-800">
                 {r.spells.map((s) => (
                   <SpellRow

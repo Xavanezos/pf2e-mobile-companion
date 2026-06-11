@@ -90,7 +90,7 @@ describe("spellbook mutations", () => {
 });
 
 describe("buildSpellbookView", () => {
-  it("prepared: slots from groups, available from prepList", () => {
+  it("prepared: slots from groups, available-to-prepare from the entry's book (by rank, cantrips excluded)", () => {
     const d: SpellcastingSheetDataLike = {
       id: "e1",
       name: "Wiz",
@@ -103,14 +103,13 @@ describe("buildSpellbookView", () => {
           active: [{ spell: { id: "s1", name: "Grease", system: { time: { value: "2" } } } }, null],
         },
       ],
-      prepList: {
-        1: [
-          { spell: { id: "s1", name: "Grease", system: { time: { value: "2" } } } },
-          { spell: { id: "s9", name: "Shield", system: { time: { value: "1" } } } },
-        ],
-      },
     };
-    const v = buildSpellbookView(d);
+    const book = [
+      { id: "s1", name: "Grease", rank: 1, isCantrip: false, system: { time: { value: "2" } } },
+      { id: "s9", name: "Shield", rank: 1, isCantrip: false, system: { time: { value: "1" } } },
+      { id: "c1", name: "Light", rank: 1, isCantrip: true, system: { time: { value: "1" } } },
+    ];
+    const v = buildSpellbookView(d, book);
     expect(v.kind).toBe("prepared");
     expect(v.ranks[0].slots).toEqual([
       { slotIndex: 0, spell: { id: "s1", name: "Grease", glyph: "2" } },

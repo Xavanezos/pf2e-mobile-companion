@@ -5,6 +5,7 @@ import { useFoundryHook } from "../../useFoundryHook";
 import { buildSpellbookView } from "../../../foundry/spells/view";
 import { prepareSpell, unprepareSpell, removeKnownSpell, toggleSignature } from "../../../foundry/spells/spellbook";
 import type { SpellbookView, SpellcastingSheetDataLike } from "../../../foundry/spells/types";
+import { loc } from "../../../foundry/i18n";
 
 function entryName(actorId: string, entryId: string): string {
   return (game as any)?.actors?.get(actorId)?.spellcasting?.get(entryId)?.name ?? "Spells";
@@ -28,7 +29,7 @@ export function SpellbookModal({ actorId, entryId, onClose }: { actorId: string;
     entry
       .getSheetData()
       .then((d: unknown) => {
-        if (id === reqId.current) setView(buildSpellbookView(d as SpellcastingSheetDataLike));
+        if (id === reqId.current) setView(buildSpellbookView(d as SpellcastingSheetDataLike, entry.spells?.contents ?? []));
       })
       .catch(() => {});
   }, [actorId, entryId]);
@@ -64,7 +65,7 @@ export function SpellbookModal({ actorId, entryId, onClose }: { actorId: string;
         <div className="flex flex-col gap-3">
           {view.ranks.map((r) => (
             <section key={r.id}>
-              <div className="mb-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">{r.label}</div>
+              <div className="mb-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">{loc(r.label)}</div>
               <div className="flex flex-col gap-1">
                 {r.slots.map((slot) => (
                   <div key={slot.slotIndex} className="flex items-center gap-2">
@@ -126,7 +127,7 @@ export function SpellbookModal({ actorId, entryId, onClose }: { actorId: string;
         <div className="flex flex-col gap-3">
           {view.ranks.map((r) => (
             <section key={r.id}>
-              <div className="mb-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">{r.label}</div>
+              <div className="mb-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">{loc(r.label)}</div>
               <div className="divide-y divide-zinc-800">
                 {r.known.length === 0 ? (
                   <div className="py-1 text-xs text-zinc-600">—</div>

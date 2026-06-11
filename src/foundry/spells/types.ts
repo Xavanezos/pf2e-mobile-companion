@@ -99,8 +99,6 @@ export interface SpellcastingSheetDataLike {
   tradition?: string | null;
   statistic?: SpellStatisticLike | null;
   groups: SpellGroupLike[];
-  /** Available spells per rank for the prepare UI (prepared casters). */
-  prepList?: Record<number, { spell: SpellLike; signature?: boolean }[]> | null;
 }
 
 /** A live spellcasting entry as iterated from `actor.spellcasting`. */
@@ -176,4 +174,13 @@ export interface SpellbookView {
   entryId: string;
   kind: "prepared" | "spontaneous";
   ranks: SpellbookRankView[];
+}
+
+/** A spell from the entry's collection (the "book") for the prepare picker. */
+export interface SpellbookSourceLike {
+  id: string;
+  name: string;
+  rank?: number;
+  isCantrip?: boolean;
+  system?: { time?: { value?: string } };
 }
