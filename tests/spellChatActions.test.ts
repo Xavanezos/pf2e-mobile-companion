@@ -55,11 +55,15 @@ function stub() {
   (globalThis as { game?: unknown }).game = {
     messages: { get: (id: string) => (id === "m1" ? message : null) },
     actors: { get: (id: string) => (id === "a1" ? actor : null) },
+    user: { settings: { showDamageDialogs: true } },
   };
   (globalThis as { ui?: unknown }).ui = { notifications: { error: () => {} } };
   (globalThis as { fromUuid?: unknown }).fromUuid = (uuid: string) =>
     Promise.resolve(uuid.includes("spell-effects") ? { toObject: () => ({ _id: "orig", type: "effect" }) } : null);
-  (globalThis as { PointerEvent?: unknown }).PointerEvent ??= class { constructor(public type: string) {} } as unknown;
+  (globalThis as { PointerEvent?: unknown }).PointerEvent = class {
+    shiftKey: boolean;
+    constructor(public type: string, init?: { shiftKey?: boolean }) { this.shiftKey = !!init?.shiftKey; }
+  } as unknown;
   return { calls };
 }
 
@@ -69,6 +73,14 @@ describe("rollSpellDamage", () => {
     await rollSpellDamage("m1");
     expect(calls[0].method).toBe("rollDamage");
     expect((calls[0].args[0] as { type?: string }).type).toBe("click");
+  });
+  it("forces PF2e's damage dialog to skip by mirroring showDamageDialogs into the event", async () => {
+    const { calls } = stub(); // stub sets showDamageDialogs: true
+    await rollSpellDamage("m1");
+    expect((calls[0].args[0] as { shiftKey?: boolean }).shiftKey).toBe(true);
+    (globalThis as { game?: any }).game.user.settings.showDamageDialogs = false;
+    await rollSpellDamage("m1");
+    expect((calls[1].args[0] as { shiftKey?: boolean }).shiftKey).toBe(false);
   });
   it("never throws when there is no spell on the message", async () => {
     stub();

@@ -41,7 +41,14 @@ export function rollSpellDamage(messageId: string): Promise<void> {
     const msg = (game as any)?.messages?.get(messageId);
     const spell = msg?.item;
     if (!spell?.rollDamage) throw new Error(`no spell on message ${messageId}`);
-    return spell.rollDamage(new PointerEvent("click"));
+    // PF2e's DamageModifierDialog can't be operated inside the mobile takeover, so
+    // force rollDamage to skip it. rollDamage derives skip-from-event via
+    // eventToRollParams: skipDialog = shiftKey ? !skipDefault : skipDefault, where
+    // skipDefault = !showDamageDialogs. Setting shiftKey to the showDamageDialogs
+    // value makes skipDialog true for either setting — mirroring the save's
+    // explicit skipDialog:true.
+    const showDamageDialogs = !!(game as any)?.user?.settings?.showDamageDialogs;
+    return spell.rollDamage(new PointerEvent("click", { shiftKey: showDamageDialogs }));
   });
 }
 
