@@ -5,6 +5,8 @@ import { Chip } from "../parts/Chip";
 import { buildSpellDetail } from "../../../foundry/spells/view";
 import { enrichHtml } from "../../../foundry/enrich";
 import type { SpellDetailLike, SpellDetailView } from "../../../foundry/spells/types";
+import { findSpellEffectUuid } from "../../../foundry/spells/chatActions";
+import { SpellEffectModal } from "../../chat/SpellEffectModal";
 
 function readSpell(actorId: string, spellId: string): SpellDetailView | null {
   const item = (game as any)?.actors?.get(actorId)?.items?.get(spellId);
@@ -24,6 +26,8 @@ export function SpellDetailModal({
 }) {
   const detail = useMemo(() => readSpell(actorId, spellId), [actorId, spellId]);
   const [html, setHtml] = useState(detail?.descriptionHtml ?? "");
+  const effectUuid = useMemo(() => findSpellEffectUuid(detail?.descriptionHtml), [detail?.descriptionHtml]);
+  const [showEffect, setShowEffect] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -69,6 +73,15 @@ export function SpellDetailModal({
           ))}
         </div>
       )}
+      {effectUuid && (
+        <button
+          onClick={() => setShowEffect(true)}
+          className="mb-3 w-full rounded-md bg-zinc-700 px-3 py-2 text-sm font-semibold text-zinc-100"
+        >
+          <i className="fas fa-wand-magic-sparkles mr-1.5" aria-hidden="true" />
+          Apply Effect
+        </button>
+      )}
       {html ? (
         <div
           className="text-sm leading-relaxed text-zinc-200 [&_a]:text-indigo-300 [&_h1]:font-bold [&_h2]:font-bold [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5"
@@ -76,6 +89,9 @@ export function SpellDetailModal({
         />
       ) : (
         <div className="text-sm text-zinc-500">No description.</div>
+      )}
+      {showEffect && effectUuid && (
+        <SpellEffectModal actorId={actorId} uuid={effectUuid} onClose={() => setShowEffect(false)} />
       )}
     </Modal>
   );
