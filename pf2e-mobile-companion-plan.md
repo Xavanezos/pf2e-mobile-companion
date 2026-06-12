@@ -96,24 +96,24 @@ This is the heart of it. Everything goes through the system so rule elements, yo
 > **Reframed (2026-06-12):** the app's bottom **Actions** tab, built to mirror PF2e's char-sheet **Actions** tab — **Strikes** (moved from Phase 3: attack w/ MAP, damage, crit), the **actions/activities list** (Encounter/Exploration/Downtime, action glyphs), and combat **toggles** (Rage/Panache/stances). Rolls route through the Slice-1 chat feed. Agreed build order: **strikes first**, checkpoint, then the actions list. **Status: DONE (2026-06-12)** — shipped mirror-only (Strikes + Actions list + Toggles) on `main`; the **hotbar macro bar** split out to **Phase 4.1** below, the **common-actions row** still deferred.
 
 - [x] **Strikes** (attack ×3 MAP, damage, crit), the **actions/activities list** (Encounter / Exploration / Downtime), and combat **toggles** (Rage/Panache/stances) — done on `main`. Spec: `docs/superpowers/specs/2026-06-12-phase-4-actions-tab-design.md` · Handoff: `docs/reports/2026-06-12-phase-4-actions-tab-handoff.md`.
-- [ ] **Hotbar macros → moved to Phase 4.1 (macro bar on the Map tab).** `game.user.hotbar` → `game.macros.get(id)` → `macro.execute()`. See Phase 4.1.
+- [x] **Hotbar macros → done in Phase 4.1 (macro bar on the Map tab).** `game.user.hotbar` → `game.macros.get(id)` → `macro.execute()`. See Phase 4.1.
 - [ ] **Common-actions row** (Seek / Hide / Demoralize / Treat Wounds / Recall Knowledge via `game.pf2e.actions`) — deferred (not in Phase 4.1; revisit later).
 
 **Milestone:** ✅ player fights a full round from the phone — strike with MAP, roll damage/crit, use actions, flip combat toggles.
 
 ---
 
-## Phase 4.1 — Macro bar (Map tab)
+## Phase 4.1 — Macro bar (Map tab) ✅ Done (2026-06-12)
 
-> Spec: `docs/superpowers/specs/2026-06-12-phase-4.1-macro-bar-design.md`. Picks up the **hotbar macro bar** deferred from Phase 4. A horizontally-scrolling strip **permanently pinned at the bottom of the Map tab**, above the tab nav, mirroring the player's hotbar (all populated slots, flattened, slot order). Tap = run the macro, exactly like the desktop hotbar. Follows the established pattern (pure mapper → version-bumped hook → guarded action → thin UI). A new `MapTab` hosts it; Phase 7's map fills the area above the bar later.
+> Spec: `docs/superpowers/specs/2026-06-12-phase-4.1-macro-bar-design.md` · Plan: `docs/superpowers/plans/2026-06-12-phase-4.1-macro-bar.md`. Picks up the **hotbar macro bar** deferred from Phase 4. A horizontally-scrolling strip **permanently pinned at the bottom of the Map tab**, above the tab nav, mirroring the player's hotbar (all populated slots, flattened, slot order). Tap = run the macro, exactly like the desktop hotbar. Follows the established pattern (pure mapper → version-bumped hook → guarded action → thin UI). A new `MapTab` hosts it; Phase 7's map fills the area above the bar later. **Status: DONE (2026-06-12, user-accepted)** — code-complete on `main`; **162 tests** + typecheck + prod build green. Live in-Foundry verification accepted at code-complete (optional spot-check via the [[phase-4.1-progress]] checklist, esp. a script macro that reads `scope.actor`).
 
-- [ ] **Read the hotbar:** pure `buildHotbarView(game.user)` — flatten `game.user.hotbar` (`Record<slot, macroId>`) across all 5 pages in slot order, resolve `game.macros.get(id)`, skip dangling → `MacroButtonView { id, slot, name, img, canExecute }`. (`src/foundry/macros/{types,hotbar}.ts`)
-- [ ] **Render the bar:** `MacroBar` — pinned `overflow-x-auto` strip of icon + tiny-name buttons; empty-state hint; dimmed/disabled when `canExecute === false`. (`src/app/macros/MacroBar.tsx`)
-- [ ] **Host on the Map tab:** new `MapTab` (`flex flex-col h-full`: map area `flex-1` [Phase-7 placeholder for now] + `<MacroBar>` pinned `shrink-0`); route `"map"` → `<MapTab />` in `TabContent`.
-- [ ] **Execute:** guarded `executeMacro(macroId, actorId)` → `macro.execute({ actor })` (active actor as scope; token omitted — no canvas until Phase 7). Chat macros post to the existing chat feed; failures → Foundry toast.
-- [ ] **Live + tests:** `useHotbar` re-preps on `updateUser`/`updateMacro`/`deleteMacro`; Vitest for the pure mapper (slot order, dangling-skip, empty → `[]`); typecheck + prod build; manual live checklist (Player1 @ mobile width, hotbar with a chat macro + a script/actor macro).
+- [x] **Read the hotbar:** pure `buildHotbarView(game.user)` — flatten `game.user.hotbar` (`Record<slot, macroId>`) across all 5 pages in slot order, resolve `game.macros.get(id)`, skip dangling → `MacroButtonView { id, slot, name, img, canExecute }`. (`src/foundry/macros/{types,hotbar}.ts`)
+- [x] **Render the bar:** `MacroBar` — pinned `overflow-x-auto` strip of icon + tiny-name buttons; empty-state hint; dimmed/disabled when `canExecute === false`. (`src/app/macros/MacroBar.tsx`)
+- [x] **Host on the Map tab:** new `MapTab` (`flex flex-col h-full`: map area `flex-1` [Phase-7 placeholder for now] + `<MacroBar>` pinned `shrink-0`); route `"map"` → `<MapTab />` in `TabContent`.
+- [x] **Execute:** guarded `executeMacro(macroId, actorId)` → `macro.execute({ actor })` (active actor as scope; token omitted — no canvas until Phase 7). Chat macros post to the existing chat feed; failures → Foundry toast.
+- [x] **Live + tests:** `useHotbar` re-preps on `updateUser`/`updateMacro`/`deleteMacro`; Vitest for the pure mapper (slot order, dangling-skip, empty → `[]`); typecheck + prod build; manual live checklist (Player1 @ mobile width, hotbar with a chat macro + a script/actor macro).
 
-**Milestone:** player taps a macro on the Map tab and it executes identically to desktop.
+**Milestone:** ✅ player taps a macro on the Map tab and it executes identically to desktop.
 
 ---
 
