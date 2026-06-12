@@ -26,6 +26,8 @@ function getScene(sceneId: string): LiveScene | undefined {
 async function withCanvasGrid<T>(scene: any, fn: () => Promise<T>): Promise<T> {
   const cv = (globalThis as any).canvas;
   const grid = scene?.grid;
+  // NB: in canvas mode `cv.grid` exists so this is a no-op; the lend only fires in
+  // lite/no-canvas mode, where PF2e's measureMovementPath needs a grid.
   if (!cv || !grid || cv.grid) return fn();
   const ownDesc = Object.getOwnPropertyDescriptor(cv, "grid");
   Object.defineProperty(cv, "grid", { value: grid, configurable: true, writable: true });

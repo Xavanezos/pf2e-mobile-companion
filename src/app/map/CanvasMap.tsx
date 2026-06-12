@@ -7,6 +7,7 @@ import { TokenInfoPopup } from "./TokenInfoPopup";
 import { useCanvasLifecycle } from "./useCanvasLifecycle";
 import { panForDrag, panForFocalZoom, clampScale } from "../../foundry/canvas/view";
 import { tokenIdAtScreenPoint } from "../../foundry/canvas/hitTest";
+import { moveToken } from "../../foundry/scene/actions";
 
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 4;
@@ -43,6 +44,12 @@ interface PressState {
   moved: boolean;
 }
 
+interface DragState {
+  pointerId: number;
+  id: string;
+  offX: number; offY: number; // world offset from token origin to the grab point
+}
+
 /** The Map tab's canvas renderer: a transparent input layer over Foundry's
  *  `#board`. Gestures drive `canvas.pan`; a tap opens the token info popup
  *  (→ targeting). The canvas itself draws the scene, walls, lighting, fog, and
@@ -56,6 +63,7 @@ export function CanvasMap() {
   const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
   const anchor = useRef<{ x: number; y: number; dist: number } | null>(null);
   const pressRef = useRef<PressState | null>(null);
+  const dragRef = useRef<DragState | null>(null);
   const [infoId, setInfoId] = useState<string | null>(null);
 
   const localPoint = (e: ReactPointerEvent) => {
@@ -75,12 +83,26 @@ export function CanvasMap() {
   };
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    // While a token drag is in progress, ignore any additional pointers so a
+    // second finger can't overwrite the press/anchor state mid-drag.
+    if (dragRef.current) return;
     const lp = localPoint(e);
     pressRef.current = {
       pointerId: e.pointerId,
       tokenId: tokenIdAtScreenPoint(e.clientX, e.clientY),
       x: e.clientX, y: e.clientY, moved: false,
     };
+    // Start a token drag if the press landed on one of MY tokens (single pointer).
+    const tokenId = pressRef.current.tokenId;
+    const tok = tokenId && view ? view.tokens.find((t) => t.id === tokenId) : null;
+    if (tok?.isMine && pointers.current.size === 0) {
+      const w = worldAt(e.clientX, e.clientY);
+      if (w) {
+        dragRef.current = { pointerId: e.pointerId, id: tok.id, offX: w.x - tok.left, offY: w.y - tok.top };
+        viewportRef.current?.setPointerCapture(e.pointerId);
+        return; // a drag suppresses pan/pinch for this pointer
+      }
+    }
     pointers.current.set(e.pointerId, lp);
     viewportRef.current?.setPointerCapture(e.pointerId);
     anchor.current = gestureState();
@@ -89,6 +111,12 @@ export function CanvasMap() {
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     const pan = readPan();
     if (!pan) return;
+    const d = dragRef.current;
+    if (d && d.pointerId === e.pointerId) {
+      const pr2 = pressRef.current;
+      if (pr2 && !pr2.moved && Math.hypot(e.clientX - pr2.x, e.clientY - pr2.y) > TAP_SLOP) pr2.moved = true;
+      return; // no live preview in v1; the canvas updates when the move round-trips
+    }
     const pr = pressRef.current;
     if (pr && pr.pointerId === e.pointerId && !pr.moved) {
       if (Math.hypot(e.clientX - pr.x, e.clientY - pr.y) > TAP_SLOP) pr.moved = true;
@@ -111,6 +139,18 @@ export function CanvasMap() {
   };
 
   const endPointer = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = dragRef.current;
+    if (d && d.pointerId === e.pointerId) {
+      const moved = pressRef.current?.moved;
+      if (moved && view) {
+        const w = worldAt(e.clientX, e.clientY);
+        if (w) void moveToken(view.id, d.id, w.x - d.offX, w.y - d.offY);
+      }
+      dragRef.current = null;
+      if (pressRef.current?.pointerId === e.pointerId) pressRef.current = null;
+      pointers.current.delete(e.pointerId);
+      return; // a real drag is not a tap
+    }
     const pr = pressRef.current;
     const isTap = !!pr && pr.pointerId === e.pointerId && !pr.moved && !!pr.tokenId;
     if (isTap && pr?.tokenId) setInfoId(pr.tokenId);
