@@ -10,6 +10,7 @@ import {
   rollStrikeCritical,
   runAuxiliaryAction,
   previewStrikeDamage,
+  previewStrikeAttack,
   setStrikeAmmo,
 } from "../../foundry/actor/strikeActions";
 import type { StrikeView } from "../../foundry/actor/types";
@@ -77,7 +78,10 @@ export function ActionsTab() {
         <StrikeAttackModal
           strike={prompt.strike}
           variantIndex={prompt.variantIndex}
-          onRoll={() => void rollStrikeAttack(actorId, prompt.strike.index, prompt.variantIndex)}
+          loadPreview={(disabled) => previewStrikeAttack(actorId, prompt.strike.index, prompt.variantIndex, disabled)}
+          onRoll={(disabled) =>
+            void rollStrikeAttack(actorId, prompt.strike.index, prompt.variantIndex, { disabledSlugs: disabled })
+          }
           onClose={() => setPrompt(null)}
         />
       )}
