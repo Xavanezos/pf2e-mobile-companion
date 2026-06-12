@@ -5,6 +5,7 @@ import { ChatCard } from "../chat/ChatCard";
 import { DamageRollModal } from "../chat/DamageRollModal";
 import { SaveRollModal } from "../chat/SaveRollModal";
 import { SpellEffectModal } from "../chat/SpellEffectModal";
+import { isNearBottom } from "../chat/scroll";
 import type { CardInteraction } from "../../foundry/chat/cardInteractions";
 
 /** The Chat tab: full scrollable history, newest at the bottom, auto-scrolled.
@@ -13,8 +14,33 @@ export function ChatTab() {
   const messages = useChatStore((s) => s.messages);
   const actorId = useAppStore((s) => s.actorId);
   const [popup, setPopup] = useState<CardInteraction | null>(null);
+  const list = useRef<HTMLDivElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
-  useEffect(() => { bottom.current?.scrollIntoView({ block: "end" }); }, [messages.length]);
+  // Stay pinned to the newest message until the user scrolls up to read history.
+  const stick = useRef(true);
+
+  // Each ChatCard injects its real PF2e content asynchronously, so on reload the
+  // list mounts near-empty and grows over several frames. A one-shot scroll fires
+  // against that empty list and leaves us at the top. Instead, re-pin to the
+  // bottom on every size change while the user is following the feed — a
+  // ResizeObserver waits for the actual layout rather than guessing a delay.
+  useEffect(() => {
+    const el = list.current;
+    if (!el) return;
+    const scroller = el.parentElement; // Shell's <main overflow-y-auto>
+    const pin = () => { if (stick.current) bottom.current?.scrollIntoView({ block: "end" }); };
+    const onScroll = () => {
+      if (scroller) stick.current = isNearBottom(scroller.scrollHeight, scroller.scrollTop, scroller.clientHeight);
+    };
+    pin();
+    const ro = new ResizeObserver(pin);
+    ro.observe(el);
+    scroller?.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      ro.disconnect();
+      scroller?.removeEventListener("scroll", onScroll);
+    };
+  }, [messages.length]);
 
   if (messages.length === 0) {
     return (
@@ -27,7 +53,7 @@ export function ChatTab() {
   }
   const close = () => setPopup(null);
   return (
-    <div className="flex flex-col gap-2 p-3">
+    <div ref={list} className="flex flex-col gap-2 p-3">
       {messages.map((m) => <ChatCard key={m.id} summary={m} onInteract={setPopup} />)}
       <div ref={bottom} />
       {popup?.kind === "damage" && <DamageRollModal messageId={popup.messageId} onClose={close} />}
