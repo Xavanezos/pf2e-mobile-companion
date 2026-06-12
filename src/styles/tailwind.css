@@ -62,6 +62,18 @@ body.pf2e-mobile-active {
   overflow: hidden;
 }
 
+/* Map tab: reveal the Foundry canvas only while the Map tab is active. The hide
+   rule above is !important, so out-specify it with BOTH body classes. The app
+   root (z-index 100000, opaque) goes transparent so the board — which fills the
+   window behind it — shows through the transparent map area; opaque chrome
+   (header, tab bar, macro bar) still paints above it. */
+body.pf2e-mobile-active.pf2e-mobile-map-active #board {
+  display: block !important;
+}
+body.pf2e-mobile-active.pf2e-mobile-map-active #pf2e-mobile-companion-root {
+  background: transparent !important;
+}
+
 /* PF2e chat cards rendered inside our feed. The markup comes from the system
    via message.renderHTML(); we keep the system's default chat-message colors and
    only tighten layout for mobile (sizing, padding, overflow). */
