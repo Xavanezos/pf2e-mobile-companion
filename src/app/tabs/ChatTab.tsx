@@ -5,6 +5,8 @@ import { ChatCard } from "../chat/ChatCard";
 import { DamageRollModal } from "../chat/DamageRollModal";
 import { SaveRollModal } from "../chat/SaveRollModal";
 import { SpellEffectModal } from "../chat/SpellEffectModal";
+import { StrikeDamageModal } from "../actions/StrikeDamageModal";
+import { rollAttackCardDamage, previewAttackCardDamage, attackCardLabel } from "../../foundry/actor/strikeChatActions";
 import { isNearBottom } from "../chat/scroll";
 import type { CardInteraction } from "../../foundry/chat/cardInteractions";
 
@@ -62,6 +64,15 @@ export function ChatTab() {
       )}
       {popup?.kind === "effect" && actorId && (
         <SpellEffectModal actorId={actorId} uuid={popup.uuid} onClose={close} />
+      )}
+      {popup?.kind === "strike-damage" && (
+        <StrikeDamageModal
+          title={attackCardLabel(popup.messageId)}
+          rollLabel={popup.critical ? "Roll Critical" : "Roll Damage"}
+          loadFormula={() => previewAttackCardDamage(popup.messageId, { critical: popup.critical })}
+          onRoll={() => void rollAttackCardDamage(popup.messageId, { critical: popup.critical })}
+          onClose={close}
+        />
       )}
     </div>
   );
