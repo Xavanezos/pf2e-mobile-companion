@@ -78,10 +78,19 @@ export function rollSpellSave(
   });
 }
 
+/** A resolved effect document — enough to display it (name/description) and to
+ *  apply it (toObject). */
+export interface LoadedEffect {
+  name?: string;
+  system?: { description?: { value?: string } };
+  toObject: () => Dict;
+}
+
 /** Resolve an effect document from a UUID, tolerating PF2e's name-based
  *  spell-effects links (Compendium.pf2e.spell-effects.Item.<name>) by falling back
- *  to a pack-index lookup by name. */
-async function loadEffect(uuid: string): Promise<{ toObject: () => Dict } | null> {
+ *  to a pack-index lookup by name. Shared by `applySpellEffect` and the effect
+ *  popup's description, so both resolve identically. */
+export async function loadEffect(uuid: string): Promise<LoadedEffect | null> {
   const g = globalThis as any;
   const direct = await g.fromUuid?.(uuid).catch(() => null);
   if (direct?.toObject) return direct;

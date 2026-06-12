@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Modal } from "../sheet/parts/Modal";
 import { enrichHtml } from "../../foundry/enrich";
-import { applySpellEffect } from "../../foundry/spells/chatActions";
+import { applySpellEffect, loadEffect } from "../../foundry/spells/chatActions";
 
 /** Popup for a spell's linked effect: enriched description + Apply to the bound
  *  character. Reachable from the cast card and the Spells-tab detail view. */
@@ -18,10 +18,10 @@ export function SpellEffectModal({
   const [html, setHtml] = useState("");
   useEffect(() => {
     let alive = true;
-    void (globalThis as any)?.fromUuid?.(uuid)?.then(async (eff: any) => {
+    void loadEffect(uuid).then(async (eff) => {
       if (!alive || !eff) return;
       setName(eff.name ?? "Spell Effect");
-      const desc: string = eff.system?.description?.value ?? "";
+      const desc = eff.system?.description?.value ?? "";
       const enriched = desc ? await enrichHtml(desc) : "";
       if (alive) setHtml(enriched);
     });
