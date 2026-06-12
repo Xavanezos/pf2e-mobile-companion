@@ -19,6 +19,9 @@ export function useScene(actorId: string | null): SceneView | null {
   useFoundryHook("createScene", onChange);
   useFoundryHook("deleteScene", onChange);
   useFoundryHook("updateActor", onChange);
+  useFoundryHook("createItem", onChange);
+  useFoundryHook("updateItem", onChange);
+  useFoundryHook("deleteItem", onChange);
   useFoundryHook("updateCombat", onChange);
   useFoundryHook("targetToken", onChange);
 
