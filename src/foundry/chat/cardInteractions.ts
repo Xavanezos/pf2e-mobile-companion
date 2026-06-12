@@ -17,7 +17,10 @@ export function interactionFromControl(
 ): CardInteraction | null {
   if (c.uuid && c.uuid.includes("spell-effects")) return { kind: "effect", uuid: c.uuid };
   if (c.action === "spell-damage") return { kind: "damage", messageId };
-  if (c.action === "strike-damage") return { kind: "strike-damage", messageId, critical: c.outcome === "criticalSuccess" };
+  // Mirror PF2e (cards.ts): the damage button is data-outcome="success"; the
+  // critical button is data-outcome="critical-success". Default anything non-success
+  // to critical, exactly as PF2e does (`outcome === "success" ? damage : critical`).
+  if (c.action === "strike-damage") return { kind: "strike-damage", messageId, critical: c.outcome !== "success" };
   if (c.action === "spell-save") {
     const dc = Number(c.dc);
     // dc must be a positive integer; a missing/empty data-dc (Number("") === 0) is rejected

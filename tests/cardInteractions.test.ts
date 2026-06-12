@@ -34,8 +34,15 @@ describe("interactionFromControl", () => {
       .toEqual({ kind: "strike-damage", messageId: "m1", critical: false });
   });
 
-  it("maps a strike-damage button (criticalSuccess) to a critical strike-damage interaction", () => {
-    expect(interactionFromControl({ action: "strike-damage", save: null, dc: null, uuid: null, outcome: "criticalSuccess" }, "m1"))
+  it("maps a strike-damage button (critical-success) to a critical strike-damage interaction", () => {
+    // PF2e's real card markup uses kebab-case data-outcome="critical-success" (not camelCase).
+    expect(interactionFromControl({ action: "strike-damage", save: null, dc: null, uuid: null, outcome: "critical-success" }, "m1"))
+      .toEqual({ kind: "strike-damage", messageId: "m1", critical: true });
+  });
+
+  it("treats any non-success strike-damage outcome (incl. missing) as critical, mirroring PF2e", () => {
+    // PF2e: `outcome === "success" ? "damage" : "critical"` (cards.ts) — default to critical.
+    expect(interactionFromControl({ action: "strike-damage", save: null, dc: null, uuid: null, outcome: null }, "m1"))
       .toEqual({ kind: "strike-damage", messageId: "m1", critical: true });
   });
 });
