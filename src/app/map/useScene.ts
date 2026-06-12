@@ -1,0 +1,34 @@
+import { useCallback, useMemo, useReducer } from "react";
+import { useFoundryHook } from "../useFoundryHook";
+import { buildSceneView } from "../../foundry/scene/view";
+import type { SceneView } from "../../foundry/scene/types";
+
+/** Live battle-map view for the active character. Synchronous data-prep (like
+ *  `useEncounter`): re-preps on the scene/token/actor/combat hooks so moves,
+ *  HP changes, and turn changes reflect within ~1s. Returns null when there is
+ *  no active scene → the tab's empty state. Reads `scene.dimensions` (canvas-free)
+ *  and the current combatant's token id (for the turn ring) from live globals. */
+export function useScene(actorId: string | null): SceneView | null {
+  const [version, bump] = useReducer((n: number) => n + 1, 0);
+  const onChange = useCallback(() => bump(), []);
+
+  useFoundryHook("updateToken", onChange);
+  useFoundryHook("createToken", onChange);
+  useFoundryHook("deleteToken", onChange);
+  useFoundryHook("updateScene", onChange);
+  useFoundryHook("createScene", onChange);
+  useFoundryHook("deleteScene", onChange);
+  useFoundryHook("updateActor", onChange);
+  useFoundryHook("updateCombat", onChange);
+
+  return useMemo(() => {
+    const scene = (game as any)?.scenes?.active;
+    if (!scene?.dimensions) return null;
+    const isGM = !!(game as any)?.user?.isGM;
+    const c = (game as any)?.combat?.combatant;
+    const currentTokenId =
+      c && c.sceneId === scene.id ? (c.tokenId ?? c.token?.id ?? null) : null;
+    return buildSceneView(scene, scene.dimensions, { isGM, characterActorId: actorId, currentTokenId });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [version, actorId]);
+}
