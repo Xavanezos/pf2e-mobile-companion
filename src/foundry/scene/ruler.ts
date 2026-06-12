@@ -34,6 +34,18 @@ export function snapToCenter(grid: GridSpec, x: number, y: number): Point {
   };
 }
 
+/** Snap a top-left point to its grid-cell corner (square grids only, aligned to
+ *  the canvas origin — the same result `scene.grid.getTopLeftPoint` yields for a
+ *  token move). Non-square grids return the point unchanged. This is
+ *  `snapToCenter` minus half a cell, so a footprint placed here sits centred. */
+export function snapTopLeft(grid: GridSpec, x: number, y: number): Point {
+  if (!grid.square) return { x, y };
+  return {
+    x: Math.floor(x / grid.size) * grid.size,
+    y: Math.floor(y / grid.size) * grid.size,
+  };
+}
+
 /** Distance between two scene-px points as `{ feet, squares }`. */
 export function measureDistance(grid: GridSpec, a: Point, b: Point): Measurement {
   if (!grid.square) {

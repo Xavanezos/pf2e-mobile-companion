@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { snapToCenter, measureDistance, type GridSpec } from "../src/foundry/scene/ruler";
+import { snapToCenter, snapTopLeft, measureDistance, type GridSpec } from "../src/foundry/scene/ruler";
 
 // 100px squares, 5 ft each, square grid (the common PF2e setup).
 const sq: GridSpec = { size: 100, distance: 5, square: true };
@@ -23,6 +23,27 @@ describe("snapToCenter (square grid)", () => {
   it("does not snap on a non-square grid", () => {
     const hex: GridSpec = { size: 100, distance: 5, square: false };
     expect(snapToCenter(hex, 30, 70)).toEqual({ x: 30, y: 70 });
+  });
+});
+
+describe("snapTopLeft (square grid)", () => {
+  it("snaps a point to its grid-cell top-left corner", () => {
+    // (140,260) → cell (1,2) → top-left (100,200)
+    expect(snapTopLeft(sq, 140, 260)).toEqual({ x: 100, y: 200 });
+  });
+
+  it("leaves a point already on a corner unchanged", () => {
+    expect(snapTopLeft(sq, 100, 200)).toEqual({ x: 100, y: 200 });
+  });
+
+  it("passes the point through unchanged on a non-square grid", () => {
+    const hex: GridSpec = { size: 100, distance: 5, square: false };
+    expect(snapTopLeft(hex, 140, 260)).toEqual({ x: 140, y: 260 });
+  });
+
+  it("is snapToCenter minus half a cell (centres a footprint on the cell)", () => {
+    const c = snapToCenter(sq, 140, 260);
+    expect(snapTopLeft(sq, 140, 260)).toEqual({ x: c.x - sq.size / 2, y: c.y - sq.size / 2 });
   });
 });
 
