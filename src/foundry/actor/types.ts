@@ -224,3 +224,43 @@ export interface CharacterLike {
   class?: { name: string } | null;
   deity?: { name: string } | null;
 }
+
+// ---------- Strikes (Phase 4) ----------
+
+/** One MAP option on a strike: `label` is PF2e's precomposed sign string
+ *  ("+17" / "+12" / "+7"); `penalty` is 0 / -5 / -10. */
+export interface StrikeVariantView { label: string; penalty: number; }
+
+/** A single strike for the Actions tab. `index` is the position in
+ *  `actor.system.actions` — the action layer re-reads the live strike by it. */
+export interface StrikeView {
+  index: number;
+  slug: string;
+  label: string;
+  img?: string;
+  ready: boolean;
+  glyph: string; // strikes are always a single action
+  traits: string[];
+  variants: StrikeVariantView[];
+  hasDamage: boolean;
+  hasCritical: boolean;
+}
+
+export type StrikesView = StrikeView[];
+
+// ---------- Strikes source (the live actor, structurally) ----------
+
+export interface StrikeVariantLike { label?: string; penalty?: number; }
+export interface StrikeLike {
+  type?: string;
+  slug?: string;
+  label?: string;
+  ready?: boolean;
+  traits?: (string | { label?: string; name?: string })[];
+  variants?: StrikeVariantLike[];
+  /** Live roll callbacks — present (functions) on real strikes; read only as flags. */
+  damage?: unknown;
+  critical?: unknown;
+  item?: { img?: string };
+}
+export interface StrikeActorLike { system?: { actions?: StrikeLike[] }; }

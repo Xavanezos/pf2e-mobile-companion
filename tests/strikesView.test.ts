@@ -1,0 +1,72 @@
+import { describe, it, expect } from "vitest";
+import { buildStrikesView } from "../src/foundry/actor/strikes";
+import type { StrikeActorLike } from "../src/foundry/actor/types";
+
+const strike = (over: Record<string, unknown> = {}) => ({
+  type: "strike",
+  slug: "longsword",
+  label: "Longsword",
+  ready: true,
+  item: { img: "i/longsword.webp" },
+  traits: [{ label: "Versatile P" }, "magical"],
+  variants: [
+    { label: "+17", penalty: 0 },
+    { label: "+12", penalty: -5 },
+    { label: "+7", penalty: -10 },
+  ],
+  damage: () => Promise.resolve(),
+  critical: () => Promise.resolve(),
+  ...over,
+});
+
+describe("buildStrikesView", () => {
+  it("maps a strike: variant labels/penalties, ready, traits, img, glyph, damage flags", () => {
+    const actor: StrikeActorLike = { system: { actions: [strike()] } };
+    const v = buildStrikesView(actor);
+    expect(v).toHaveLength(1);
+    expect(v[0]).toMatchObject({
+      index: 0,
+      slug: "longsword",
+      label: "Longsword",
+      img: "i/longsword.webp",
+      ready: true,
+      glyph: "1",
+      traits: ["Versatile P", "magical"],
+      hasDamage: true,
+      hasCritical: true,
+    });
+    expect(v[0].variants).toEqual([
+      { label: "+17", penalty: 0 },
+      { label: "+12", penalty: -5 },
+      { label: "+7", penalty: -10 },
+    ]);
+  });
+
+  it("preserves the ORIGINAL actions index when a non-strike precedes it", () => {
+    const actor: StrikeActorLike = {
+      system: { actions: [{ type: "area-attack" }, strike({ slug: "fist", label: "Fist" })] },
+    };
+    const v = buildStrikesView(actor);
+    expect(v).toHaveLength(1);
+    expect(v[0]).toMatchObject({ index: 1, slug: "fist" });
+  });
+
+  it("skips entries with no variants and flags missing damage/critical", () => {
+    const actor: StrikeActorLike = {
+      system: {
+        actions: [
+          strike({ slug: "novariants", variants: [] }),
+          strike({ slug: "bow", damage: undefined, critical: undefined }),
+        ],
+      },
+    };
+    const v = buildStrikesView(actor);
+    expect(v.map((s) => s.slug)).toEqual(["bow"]);
+    expect(v[0]).toMatchObject({ hasDamage: false, hasCritical: false });
+  });
+
+  it("returns [] when the actor has no actions", () => {
+    expect(buildStrikesView({})).toEqual([]);
+    expect(buildStrikesView({ system: {} })).toEqual([]);
+  });
+});
