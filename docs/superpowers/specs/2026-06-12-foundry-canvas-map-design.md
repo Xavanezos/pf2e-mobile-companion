@@ -95,7 +95,7 @@ A `mapRenderer` **client** setting:
 - `src/foundry/takeover.ts` — invert the `noCanvas` target when `mapRenderer === 'canvas'`; keep the reload-guard.
 - `src/foundry/settings.ts` — register the `mapRenderer` client setting (+ get/set helpers); `onChange` flips `noCanvas` and reloads.
 - `src/app/tabs/MapTab.tsx` — pick `<CanvasMap>` vs `<BattleMap>` by setting + `canvas.ready`; `MacroBar` stays pinned.
-- `src/foundry/scene/actions.ts` — drop the `canvas.grid` lend now that `canvas.grid` exists; keep the guarded `moveToken` + grid snap.
+- `src/foundry/scene/actions.ts` — **no change** to `moveToken`. The `withCanvasGrid` lend already no-ops when `canvas.grid` exists (canvas mode) and is still required by the `lite` fallback (canvas off), so it stays; just add a clarifying comment.
 - `src/styles/tailwind.css` — add the `body.pf2e-mobile-map-active #board` reveal/position rule; ensure the Map tab content area is transparent and the root out-stacks the board.
 
 **Reused untouched**
@@ -125,7 +125,7 @@ A `mapRenderer` **client** setting:
 3. **Lifecycle:** `lifecycle.ts` + `useCanvasLifecycle` (pause/resume on tab change), the `pf2e-mobile-map-active` CSS, view + fit on enter.
 4. **CanvasMap render + pan/zoom:** input layer over the board, gestures → `canvas.pan`. *Live checkpoint.*
 5. **Tap → hit-test → popup → targeting:** `hitTest.ts` (TDD core) + popup bridge.
-6. **Drag-own-token → `moveToken`:** bridge drag; remove the `canvas.grid` lend; **audit other canvas-off assumptions**.
+6. **Drag-own-token → `moveToken`:** bridge drag (reuses the existing action unchanged); **audit other canvas-off assumptions** (the `withCanvasGrid` lend stays — no-op in canvas mode, needed by `lite`).
 7. **Overlays + fallback polish:** ruler overlay synced to the canvas transform; clear-targets button; verify `lite` fallback.
 
 ## Out of scope (deferred / YAGNI)
