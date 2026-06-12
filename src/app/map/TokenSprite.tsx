@@ -32,6 +32,15 @@ export function TokenSprite({
     : 0;
   const hpColor = hpPct > 50 ? "bg-emerald-500" : hpPct > 25 ? "bg-amber-500" : "bg-rose-500";
 
+  // Conditions first, then effects; combine, cap at 4 slots, show "+N" when more.
+  const statuses: { key: string; img: string | null; value: number | null }[] = [
+    ...token.conditions.map((c) => ({ key: `c-${c.slug}`, img: c.img ?? null, value: c.value })),
+    ...token.effects.map((e, i) => ({ key: `e-${e.id ?? i}`, img: e.img ?? null, value: null })),
+  ];
+  const MAX_ICONS = 4;
+  const overflow = statuses.length > MAX_ICONS ? statuses.length - (MAX_ICONS - 1) : 0;
+  const shownStatuses = overflow > 0 ? statuses.slice(0, MAX_ICONS - 1) : statuses;
+
   return (
     <div
       data-token-id={token.id}
@@ -48,6 +57,29 @@ export function TokenSprite({
           </span>
         )}
       </div>
+      {statuses.length > 0 && (
+        <div className="pointer-events-none absolute inset-x-0 top-0 flex">
+          {shownStatuses.map((s) => (
+            <div key={s.key} className="relative aspect-square w-1/4 overflow-hidden rounded-[2px] bg-zinc-900/70 ring-1 ring-black/50">
+              {s.img ? (
+                <img src={s.img} alt="" draggable={false} className="h-full w-full object-cover" />
+              ) : (
+                <span className="block h-full w-full bg-zinc-600" />
+              )}
+              {s.value != null && (
+                <span className="absolute bottom-0 right-0 rounded-tl-[2px] bg-black/85 px-[1px] text-[7px] font-bold leading-none text-white">
+                  {s.value}
+                </span>
+              )}
+            </div>
+          ))}
+          {overflow > 0 && (
+            <div className="flex aspect-square w-1/4 items-center justify-center rounded-[2px] bg-black/80 text-[7px] font-bold leading-none text-white ring-1 ring-black/50">
+              +{overflow}
+            </div>
+          )}
+        </div>
+      )}
       {token.targeted && (
         <div className="pointer-events-none absolute -inset-1">
           <div className="h-full w-full rounded-sm ring-2 ring-red-500" />
