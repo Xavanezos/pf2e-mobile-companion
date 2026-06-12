@@ -10,6 +10,7 @@ import {
   rollStrikeCritical,
   runAuxiliaryAction,
   previewStrikeDamage,
+  setStrikeAmmo,
 } from "../../foundry/actor/strikeActions";
 import type { StrikeView } from "../../foundry/actor/types";
 
@@ -23,7 +24,8 @@ type Prompt = { strike: StrikeView; kind: "attack" | "damage" | "crit"; variantI
 
 /** The bottom Actions tab — mirrors PF2e's char-sheet Actions tab. Strikes section:
  *  cards open roll prompts (attack breakdown / damage formula) before rolling, and
- *  expose auxiliary actions. Actions list + toggles land in Slice B. */
+ *  expose auxiliary actions + a ranged ammunition selector. Actions list + toggles
+ *  land in Slice B. */
 export function ActionsTab() {
   const actorId = useAppStore((s) => s.actorId);
   const [section, setSection] = useState<Section>("strikes");
@@ -62,6 +64,7 @@ export function ActionsTab() {
               onDamage={() => setPrompt({ strike: s, kind: "damage", variantIndex: 0 })}
               onCritical={() => setPrompt({ strike: s, kind: "crit", variantIndex: 0 })}
               onAux={(ai) => void runAuxiliaryAction(actorId, s.index, ai)}
+              onSetAmmo={(id) => void setStrikeAmmo(actorId, s.index, id)}
             />
           ))
         ))}

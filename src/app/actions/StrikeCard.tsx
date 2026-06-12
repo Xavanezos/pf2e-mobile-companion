@@ -1,22 +1,28 @@
 import type { StrikeView } from "../../foundry/actor/types";
 import { ActionGlyph } from "../sheet/parts/ActionGlyph";
 
-/** One strike: img + name + glyph + ready dot, traits, auxiliary-action row, three
- *  MAP attack buttons, then Damage + Crit. Buttons call up to ActionsTab, which
- *  opens the roll prompts. Solid `bg-*` fills per the Tailwind-v4 button gotchas. */
+/** One strike: img + name + glyph + ready dot, traits, auxiliary-action row, an
+ *  ammunition dropdown (ranged weapons), three MAP attack buttons, then Damage +
+ *  Crit. Buttons call up to ActionsTab, which opens the roll prompts. Attacks are
+ *  disabled when a ranged weapon is unloaded. Solid `bg-*` fills per the
+ *  Tailwind-v4 button gotchas (a `<select>` is unaffected by that reset). */
 export function StrikeCard({
   strike,
   onAttack,
   onDamage,
   onCritical,
   onAux,
+  onSetAmmo,
 }: {
   strike: StrikeView;
   onAttack: (variantIndex: number) => void;
   onDamage: () => void;
   onCritical: () => void;
   onAux: (auxIndex: number) => void;
+  onSetAmmo: (ammoId: string | null) => void;
 }) {
+  const ammo = strike.ammo;
+  const unloaded = !!ammo && (ammo.selectedId == null || ammo.remaining < 1);
   return (
     <section className={`border-b border-zinc-800 px-3 py-2 ${strike.ready ? "" : "opacity-50"}`}>
       <div className="flex items-center gap-2">
@@ -50,18 +56,40 @@ export function StrikeCard({
         </div>
       )}
 
+      {ammo && (
+        <div className="mt-2 flex items-center gap-2">
+          <span className="shrink-0 text-[11px] uppercase tracking-wide text-zinc-500">Ammo</span>
+          <select
+            value={ammo.selectedId ?? ""}
+            onChange={(e) => onSetAmmo(e.target.value || null)}
+            className="min-w-0 flex-1 rounded-md bg-zinc-800 px-2 py-1.5 text-sm text-zinc-100"
+          >
+            <option value="">— select ammunition —</option>
+            {ammo.options.map((o) => (
+              <option key={o.id} value={o.id}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div className="mt-2 flex items-center gap-2">
         <span className="shrink-0 text-[11px] uppercase tracking-wide text-zinc-500">Attack</span>
         {strike.variants.map((v, i) => (
           <button
             key={i}
             onClick={() => onAttack(i)}
-            className="flex-1 rounded-md bg-indigo-600 px-2 py-1.5 text-sm font-semibold text-white"
+            disabled={unloaded}
+            className="flex-1 rounded-md bg-indigo-600 px-2 py-1.5 text-sm font-semibold text-white disabled:bg-zinc-700 disabled:text-zinc-500"
           >
             {v.label}
           </button>
         ))}
       </div>
+      {unloaded && (
+        <div className="mt-1 text-[11px] text-amber-400">
+          {ammo && ammo.selectedId != null && ammo.remaining < 1 ? "Out of ammunition" : "Select ammunition to attack"}
+        </div>
+      )}
 
       {(strike.hasDamage || strike.hasCritical) && (
         <div className="mt-2 flex gap-2">
