@@ -106,7 +106,7 @@ export function SpellbookModal({ actorId, entryId, onClose }: { actorId: string;
                               void prepareSpell(actorId, entryId, k.id, picking.groupId, picking.slotIndex);
                               setPicking(null);
                             }}
-                            className="flex items-center gap-2 rounded px-2 py-1 text-left text-sm"
+                            className="flex items-center justify-start gap-2 rounded px-2 py-1 text-left text-sm"
                           >
                             <ActionGlyph code={k.glyph} />
                             <span className="truncate">{k.name}</span>

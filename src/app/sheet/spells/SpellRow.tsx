@@ -15,7 +15,7 @@ export function SpellRow({
 }) {
   return (
     <div className={`flex items-center gap-2 px-3 py-2 ${spell.expended ? "opacity-50" : ""}`}>
-      <button onClick={onDetail} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+      <button onClick={onDetail} className="flex min-w-0 flex-1 items-center justify-start gap-2 text-left">
         {spell.img && <img src={spell.img} alt="" className="h-7 w-7 rounded object-cover" />}
         <span className="min-w-0 truncate text-sm">{spell.name}</span>
         {spell.signature && (
