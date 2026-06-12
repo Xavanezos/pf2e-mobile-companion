@@ -4,16 +4,27 @@ import { useAppStore } from "../store";
 import { useScene } from "./useScene";
 import { TokenSprite } from "./TokenSprite";
 import { screenToScene, type ViewTransform } from "../../foundry/scene/geometry";
+import { moveToken } from "../../foundry/scene/actions";
 
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 4;
 const clampZoom = (z: number) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z));
 
+interface DragState {
+  pointerId: number;
+  id: string;
+  offX: number; // scene-space offset from the token origin to the grab point
+  offY: number;
+  left: number; // latest optimistic token origin (scene px)
+  top: number;
+}
+
 /** The battle map: a transformed "stage" the size of the padded scene, holding
  *  the background image and one positioned token per visible token, over the live
- *  `game.scenes.active` documents (no PIXI canvas). Supports one-finger pan and
- *  two-finger pinch-zoom (and wheel-zoom for desktop testing); drag-to-move and
- *  tap-for-info arrive in later tasks. */
+ *  `game.scenes.active` documents (no PIXI canvas). One-finger pan, two-finger
+ *  pinch-zoom (+ wheel for desktop), and drag-your-own-token to move it
+ *  (`moveToken` → Foundry validates ownership server-side; the optimistic position
+ *  is replaced by the snapped truth on the next `updateToken`). */
 export function BattleMap() {
   const actorId = useAppStore((s) => s.actorId);
   const view = useScene(actorId);
@@ -25,9 +36,10 @@ export function BattleMap() {
     setT(next);
   }, []);
 
-  // Active pointers + the current gesture anchor (last midpoint + pinch distance).
   const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
   const anchor = useRef<{ x: number; y: number; dist: number } | null>(null);
+  const dragRef = useRef<DragState | null>(null);
+  const [drag, setDrag] = useState<{ id: string; left: number; top: number } | null>(null);
 
   // Fit the whole scene into the viewport on mount / scene-dimension change.
   const dimsKey = view ? `${view.dims.width}x${view.dims.height}` : "none";
@@ -46,7 +58,6 @@ export function BattleMap() {
     const r = viewportRef.current!.getBoundingClientRect();
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   };
-  /** Midpoint + finger-distance of the currently-down pointers (dist 0 for one). */
   const gestureState = () => {
     const pts = [...pointers.current.values()];
     if (pts.length < 2) return { x: pts[0]?.x ?? 0, y: pts[0]?.y ?? 0, dist: 0 };
@@ -55,32 +66,66 @@ export function BattleMap() {
   };
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    pointers.current.set(e.pointerId, localPoint(e));
+    if (dragRef.current) return; // ignore extra pointers mid-drag
+    const lp = localPoint(e);
+    const cur0 = tRef.current;
+    // Start a token drag if the press landed on one of MY tokens (single pointer).
+    const tokenEl = (e.target as HTMLElement).closest("[data-token-id]") as HTMLElement | null;
+    if (tokenEl?.dataset.mine && cur0 && view && pointers.current.size === 0) {
+      const id = tokenEl.dataset.tokenId!;
+      const tok = view.tokens.find((tk) => tk.id === id);
+      if (tok) {
+        const sp = screenToScene(lp.x, lp.y, cur0);
+        dragRef.current = { pointerId: e.pointerId, id, offX: sp.x - tok.left, offY: sp.y - tok.top, left: tok.left, top: tok.top };
+        setDrag({ id, left: tok.left, top: tok.top });
+        viewportRef.current?.setPointerCapture(e.pointerId);
+        return;
+      }
+    }
+    // Otherwise pan / pinch.
+    pointers.current.set(e.pointerId, lp);
     viewportRef.current?.setPointerCapture(e.pointerId);
     anchor.current = gestureState();
   };
+
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     const cur0 = tRef.current;
-    if (!pointers.current.has(e.pointerId) || !cur0 || !anchor.current) return;
+    if (!cur0) return;
+    const d = dragRef.current;
+    if (d && d.pointerId === e.pointerId) {
+      const lp = localPoint(e);
+      const sp = screenToScene(lp.x, lp.y, cur0);
+      d.left = sp.x - d.offX;
+      d.top = sp.y - d.offY;
+      setDrag({ id: d.id, left: d.left, top: d.top });
+      return;
+    }
+    if (!pointers.current.has(e.pointerId) || !anchor.current) return;
     pointers.current.set(e.pointerId, localPoint(e));
     const prev = anchor.current;
     const cur = gestureState();
     if (pointers.current.size >= 2 && prev.dist > 0) {
-      // Pinch: scale around the midpoint, keeping the scene point under the old
-      // midpoint fixed under the new one (handles two-finger pan + zoom together).
       const newZoom = clampZoom(cur0.zoom * (cur.dist / prev.dist));
       const s = screenToScene(prev.x, prev.y, cur0);
       applyT({ zoom: newZoom, panX: cur.x - s.x * newZoom, panY: cur.y - s.y * newZoom });
     } else {
-      // Pan by the pointer delta.
       applyT({ zoom: cur0.zoom, panX: cur0.panX + (cur.x - prev.x), panY: cur0.panY + (cur.y - prev.y) });
     }
     anchor.current = cur;
   };
+
   const endPointer = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = dragRef.current;
+    if (d && d.pointerId === e.pointerId) {
+      if (view) void moveToken(view.id, d.id, d.left, d.top);
+      dragRef.current = null;
+      setDrag(null);
+      return;
+    }
     pointers.current.delete(e.pointerId);
     anchor.current = pointers.current.size ? gestureState() : null;
   };
+
   const onWheel = (e: ReactWheelEvent<HTMLDivElement>) => {
     const cur0 = tRef.current;
     if (!cur0) return;
@@ -136,9 +181,11 @@ export function BattleMap() {
               }}
             />
           )}
-          {view.tokens.map((tok) => (
-            <TokenSprite key={tok.id} token={tok} showLabel={showLabels} />
-          ))}
+          {view.tokens.map((tok) => {
+            const dragging = drag?.id === tok.id;
+            const shown = dragging && drag ? { ...tok, left: drag.left, top: drag.top } : tok;
+            return <TokenSprite key={tok.id} token={shown} showLabel={showLabels} dragging={dragging} />;
+          })}
         </div>
       )}
     </div>

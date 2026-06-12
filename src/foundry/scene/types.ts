@@ -31,6 +31,7 @@ export interface TokenView {
 
 /** What the Map tab renders. */
 export interface SceneView {
+  id: string;                    // active scene id (for moveToken dispatch)
   background: string | null;     // scene.background.src
   dims: SceneDimensionsLike;
   tokens: TokenView[];

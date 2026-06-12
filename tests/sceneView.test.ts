@@ -21,6 +21,7 @@ const GM: SceneViewContext = { isGM: true, characterActorId: null, currentTokenI
 describe("buildSceneView", () => {
   it("maps fields and converts grid units to px", () => {
     const v = buildSceneView(scene([token({ x: 100, y: 200, width: 2, height: 1 })]), DIMS, GM);
+    expect(v.id).toBe("s1");
     expect(v.background).toBe("bg.webp");
     expect(v.dims.size).toBe(100);
     expect(v.tokens[0]).toMatchObject({ left: 100, top: 200, width: 200, height: 100, img: "gob.webp" });
