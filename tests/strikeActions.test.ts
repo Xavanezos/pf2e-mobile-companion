@@ -68,6 +68,20 @@ describe("strike actions", () => {
     expect(arg.event?.shiftKey).toBe(true);
   });
 
+  it("rolls with disabledSlugs: ignores matching modifiers DURING the roll, restores AFTER", async () => {
+    await rollStrikeAttack("a", 0, 0, { disabledSlugs: ["potency"] });
+    const rollCall = calls.find((c) => c.method === "variant0.roll");
+    expect(rollCall?.snapshot).toEqual([false, true]); // ability live, potency ignored at roll time
+    const live = (globalThis as unknown as { game: { actors: { get(): { system: { actions: { modifiers: { ignored: boolean }[]; totalModifier: number }[] } } } } }).game.actors.get().system.actions[0];
+    expect(live.modifiers.map((m) => m.ignored)).toEqual([false, false]); // restored
+    expect(live.totalModifier).toBe(5);
+  });
+
+  it("rolling with no disabledSlugs touches no modifiers (no calculateTotal)", async () => {
+    await rollStrikeAttack("a", 0, 1);
+    expect(calls.map((c) => c.method)).toEqual(["variant1.roll"]);
+  });
+
   it("rolls damage and critical with showDamageDialogs mirrored into the event", async () => {
     await rollStrikeDamage("a", 0);
     await rollStrikeCritical("a", 0);

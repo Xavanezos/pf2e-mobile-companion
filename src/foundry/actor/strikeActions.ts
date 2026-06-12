@@ -51,12 +51,35 @@ function skipDialogEvent(setting: "showCheckDialogs" | "showDamageDialogs"): Dic
   return { event: new PointerEvent("click", { shiftKey: show }) };
 }
 
-/** Roll one MAP variant of a strike (variantIndex 0/1/2 → MAP 0/-5/-10). */
-export function rollStrikeAttack(actorId: string, strikeIndex: number, variantIndex: number): Promise<void> {
-  return guard(() => {
-    const variant = getStrike(actorId, strikeIndex).variants?.[variantIndex];
+/** Roll one MAP variant of a strike (variantIndex 0/1/2 → MAP 0/-5/-10). When
+ *  `disabledSlugs` is given, transiently flips `.ignored` on the matching live
+ *  modifiers so the roll's cloned modifiers drop them (PF2e clones at roll time),
+ *  then RESTORES them in a `finally` — transient and self-healing even on error. */
+export function rollStrikeAttack(
+  actorId: string,
+  strikeIndex: number,
+  variantIndex: number,
+  opts?: { disabledSlugs?: string[] },
+): Promise<void> {
+  return guard(async () => {
+    const strike = getStrike(actorId, strikeIndex);
+    const variant = strike.variants?.[variantIndex];
     if (!variant) throw new Error(`no variant ${variantIndex} on strike ${strikeIndex}`);
-    return variant.roll(skipDialogEvent("showCheckDialogs"));
+    const disabled = new Set(opts?.disabledSlugs ?? []);
+    const touched = (strike.modifiers ?? []).filter((m) => disabled.has(m.slug ?? ""));
+    const prev = touched.map((m) => m.ignored ?? false);
+    try {
+      if (touched.length) {
+        touched.forEach((m) => { m.ignored = true; });
+        strike.calculateTotal?.();
+      }
+      await variant.roll(skipDialogEvent("showCheckDialogs"));
+    } finally {
+      if (touched.length) {
+        touched.forEach((m, i) => { m.ignored = prev[i]; });
+        strike.calculateTotal?.();
+      }
+    }
   });
 }
 
