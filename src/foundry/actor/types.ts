@@ -236,6 +236,9 @@ export interface StrikeAuxView { label: string; glyph: string | null; }
 /** One row of the attack breakdown; `slug` identifies it for the A.2b toggle. */
 export interface StrikeModView { slug: string; label: string; value: number; enabled: boolean; }
 
+/** Ranged ammunition for a strike's `<select>`; null for melee/thrown weapons. */
+export interface StrikeAmmoView { options: { id: string; label: string }[]; selectedId: string | null; remaining: number; }
+
 /** A single strike for the Actions tab. `index` is the position in
  *  `actor.system.actions` — the action layer re-reads the live strike by it. */
 export interface StrikeView {
@@ -249,6 +252,7 @@ export interface StrikeView {
   variants: StrikeVariantView[];
   auxiliaryActions: StrikeAuxView[];
   modifiers: StrikeModView[];
+  ammo: StrikeAmmoView | null;
   hasDamage: boolean;
   hasCritical: boolean;
 }
@@ -270,6 +274,12 @@ export interface StrikeLike {
   critical?: unknown;
   auxiliaryActions?: { label?: string; glyph?: string }[];
   modifiers?: { slug?: string; label?: string; modifier?: number; enabled?: boolean; ignored?: boolean; hideIfDisabled?: boolean }[];
+  selectedAmmoId?: string | null;
+  ammunition?: {
+    compatible?: { id: string; label: string }[];
+    selected?: { id: string } | null;
+    remaining?: number;
+  } | null;
   item?: { img?: string };
 }
 export interface StrikeActorLike { system?: { actions?: StrikeLike[] }; }

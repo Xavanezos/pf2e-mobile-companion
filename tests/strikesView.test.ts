@@ -104,4 +104,34 @@ describe("buildStrikesView", () => {
     expect(v[0].auxiliaryActions).toEqual([]);
     expect(v[0].modifiers).toEqual([]);
   });
+
+  it("maps ranged ammunition (options/selected/remaining) and null for non-ammo strikes", () => {
+    const ranged = strike({
+      slug: "longbow",
+      ammunition: {
+        compatible: [
+          { id: "arrows", label: "Arrows (19)" },
+          { id: "cold-iron", label: "Cold Iron Arrows (10)" },
+        ],
+        selected: { id: "arrows" },
+        remaining: 19,
+      },
+    });
+    const v = buildStrikesView({ system: { actions: [ranged, strike({ slug: "fist" })] } });
+    expect(v[0].ammo).toEqual({
+      options: [
+        { id: "arrows", label: "Arrows (19)" },
+        { id: "cold-iron", label: "Cold Iron Arrows (10)" },
+      ],
+      selectedId: "arrows",
+      remaining: 19,
+    });
+    expect(v[1].ammo).toBeNull();
+  });
+
+  it("falls back to selectedAmmoId and remaining 0 when ammunition.selected is absent", () => {
+    const ranged = strike({ slug: "sling", selectedAmmoId: "bullets", ammunition: { compatible: [{ id: "bullets", label: "Bullets (5)" }] } });
+    const v = buildStrikesView({ system: { actions: [ranged] } });
+    expect(v[0].ammo).toEqual({ options: [{ id: "bullets", label: "Bullets (5)" }], selectedId: "bullets", remaining: 0 });
+  });
 });

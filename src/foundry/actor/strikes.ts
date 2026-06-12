@@ -16,6 +16,18 @@ function auxGlyph(g: string | undefined): string | null {
   return null;
 }
 
+/** Ranged ammo for the strike card. `strike.ammunition` is null for melee/thrown
+ *  (PF2e's `getAttackAmmo` returns null when the weapon doesn't expend ammo). */
+function mapAmmo(s: StrikeLike): StrikeView["ammo"] {
+  const a = s.ammunition;
+  if (!a) return null;
+  return {
+    options: (a.compatible ?? []).map((o) => ({ id: o.id, label: o.label })),
+    selectedId: a.selected?.id ?? s.selectedAmmoId ?? null,
+    remaining: a.remaining ?? 0,
+  };
+}
+
 /** Pure: map `actor.system.actions` to the Strikes view. Keeps the ORIGINAL array
  *  index on each kept strike (the action layer re-reads the live strike by it),
  *  filters to real strikes (`type === "strike"` with a non-empty variants array),
@@ -42,6 +54,7 @@ export function buildStrikesView(actor: StrikeActorLike): StrikesView {
       modifiers: (s.modifiers ?? [])
         .filter((m) => m.enabled || !m.hideIfDisabled)
         .map((m) => ({ slug: m.slug ?? "", label: m.label ?? "", value: m.modifier ?? 0, enabled: m.enabled ?? false })),
+      ammo: mapAmmo(s),
       hasDamage: typeof s.damage === "function",
       hasCritical: typeof s.critical === "function",
     });
