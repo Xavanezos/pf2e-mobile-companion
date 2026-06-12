@@ -1,5 +1,5 @@
 import { registerSettings, isMobileActive } from "./foundry/settings";
-import { applyTakeover, removeTakeover, isTakeoverActive } from "./foundry/takeover";
+import { applyTakeover, removeTakeover, isTakeoverActive, reconcileMapRenderer } from "./foundry/takeover";
 import { installStrikeRollDialogHook } from "./foundry/actor/strikeActions";
 
 const MODULE_ID = "pf2e-mobile-companion";
@@ -8,9 +8,10 @@ const MODULE_ID = "pf2e-mobile-companion";
 // Foundry fires `init`.
 Hooks.once("init", () => {
   console.log(`${MODULE_ID} | init`);
-  registerSettings(() => {
-    void onUiModeChange();
-  });
+  registerSettings(
+    () => { void onUiModeChange(); },
+    () => { void reconcileMapRenderer(); },
+  );
 });
 
 Hooks.once("ready", async () => {
