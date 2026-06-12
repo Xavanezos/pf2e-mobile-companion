@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
-import type { CharacterView } from "../../foundry/actor/types";
+import type { CharacterView, EffectView } from "../../foundry/actor/types";
 import { StatRow } from "./parts/StatRow";
 import { RankPip } from "./parts/RankPip";
 import { Chip } from "./parts/Chip";
+import { EffectChip } from "./parts/EffectChip";
 import type { BreakdownRequest } from "./BreakdownModal";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -15,13 +16,14 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 const sign = (n: number) => `${n >= 0 ? "+" : ""}${n}`;
 
-export function VitalsPanel({ view, onInitiativeChange, onShieldHpAdjust, onManageConditions, onShowBreakdown, onShowDetail }: {
+export function VitalsPanel({ view, onInitiativeChange, onShieldHpAdjust, onManageConditions, onShowBreakdown, onShowDetail, onEffectActions }: {
   view: CharacterView;
   onInitiativeChange: (statistic: string) => void;
   onShieldHpAdjust: (delta: 1 | -1) => void;
   onManageConditions: () => void;
   onShowBreakdown: (req: BreakdownRequest) => void;
   onShowDetail: (id: string) => void;
+  onEffectActions: (effect: EffectView) => void;
 }) {
   const d = view.defenses;
   const b = view.bio;
@@ -108,9 +110,20 @@ export function VitalsPanel({ view, onInitiativeChange, onShieldHpAdjust, onMana
       <Section title="Conditions & Effects">
         <div className="mb-2 flex flex-wrap gap-1">
           {view.conditions.map((c) => <Chip key={c.slug} tone="warn">{c.name}{c.value != null ? ` ${c.value}` : ""}</Chip>)}
-          {view.effects.map((e, i) => <Chip key={`e${i}`} onClick={e.id ? () => onShowDetail(e.id!) : undefined}>{e.name}{e.badge ? ` ${e.badge}` : ""}</Chip>)}
+          {view.effects.map((e, i) => (
+            <EffectChip
+              key={`e${i}`}
+              onTap={e.id ? () => onShowDetail(e.id!) : undefined}
+              onLongPress={e.id ? () => onEffectActions(e) : undefined}
+            >
+              {e.name}{e.badge ? ` ${e.badge}` : ""}
+            </EffectChip>
+          ))}
           {view.conditions.length === 0 && view.effects.length === 0 && <span className="text-xs text-zinc-500">None.</span>}
         </div>
+        {view.effects.length > 0 && (
+          <div className="mb-2 text-[11px] text-zinc-500">Tap an effect for details · hold to remove.</div>
+        )}
         <button onClick={onManageConditions} className="min-h-11 rounded-md bg-zinc-800 px-3 text-sm font-medium text-indigo-300">Manage conditions</button>
       </Section>
     </div>

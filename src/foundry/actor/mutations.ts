@@ -7,7 +7,7 @@ interface ActorDoc {
   decreaseCondition?(slug: string): Promise<unknown>;
   items?: { get(id: string): ItemDoc | undefined };
 }
-interface ItemDoc { update(data: Record<string, unknown>): Promise<unknown>; }
+interface ItemDoc { update(data: Record<string, unknown>): Promise<unknown>; delete?(): Promise<unknown>; }
 
 function getActor(actorId: string): ActorDoc | undefined {
   return (game as any).actors.get(actorId) as ActorDoc | undefined;
@@ -68,4 +68,12 @@ export function setEquipped(actorId: string, itemId: string, carryType: string, 
 }
 export function setInvested(actorId: string, itemId: string, invested: boolean): Promise<void> {
   return guard(() => getActor(actorId)!.items!.get(itemId)!.update({ "system.equipped.invested": invested }));
+}
+/** Remove an effect (or any embedded item) from the actor by deleting the item. */
+export function removeEffect(actorId: string, effectId: string): Promise<void> {
+  return guard(() => {
+    const item = getActor(actorId)!.items!.get(effectId);
+    if (!item?.delete) throw new Error(`No effect ${effectId} to remove`);
+    return item.delete();
+  });
 }
