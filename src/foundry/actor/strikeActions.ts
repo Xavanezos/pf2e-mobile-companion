@@ -51,10 +51,80 @@ function skipDialogEvent(setting: "showCheckDialogs" | "showDamageDialogs"): Dic
   return { event: new PointerEvent("click", { shiftKey: show }) };
 }
 
-/** Roll one MAP variant of a strike (variantIndex 0/1/2 → MAP 0/-5/-10). When
- *  `disabledSlugs` is given, transiently flips `.ignored` on the matching live
- *  modifiers so the roll's cloned modifiers drop them (PF2e clones at roll time),
- *  then RESTORES them in a `finally` — transient and self-healing even on error. */
+/** Inverse of `skipDialogEvent`: a click event that FORCES PF2e's modifier dialog to
+ *  render (shiftKey = !setting), so our render hook can drive it headlessly. */
+function showDialogEvent(setting: "showCheckDialogs"): Dict {
+  const show = !!(game as any)?.user?.settings?.[setting];
+  return { event: new PointerEvent("click", { shiftKey: !show }) };
+}
+
+// ---- Attack modifier toggle (A.2b), applied post-clone ----
+// The toggle must reach the FINAL CheckModifier. When a target is selected the strike
+// roll re-derives its modifiers on a contextual actor clone (PF2e's `getContextualClone`
+// re-runs data prep from `_source`), so a transient `.ignored` set on the LIVE strike is
+// rebuilt away and the rolled total ignores it. PF2e itself only toggles modifiers through
+// its `CheckModifiersDialog`; so instead of suppressing that dialog we let it render and
+// drive it headlessly — `rollStrikeAttack` queues the disabled slugs, and the
+// `renderCheckModifiersDialog` hook applies them to the real post-clone check and resolves
+// the dialog without showing any UI.
+
+interface CheckLike { modifiers?: { slug?: string; ignored?: boolean }[]; calculateTotal?: () => void; }
+interface CheckDialogLike {
+  check?: CheckLike;
+  resolve?: (value: boolean) => void;
+  close?: (opts?: Dict) => unknown;
+  isResolved?: boolean;
+  element?: { hide?: () => void };
+}
+
+let pendingDisabledSlugs: Set<string> | null = null;
+
+/** Mirror PF2e's dialog: set `.ignored` on a check's matching modifiers (by slug) and
+ *  recompute the total. Applied to the real post-clone check by the dialog hook. */
+export function applyDisabledSlugsToCheck(check: CheckLike, disabledSlugs: Iterable<string>): void {
+  const disabled = new Set(disabledSlugs);
+  for (const m of check.modifiers ?? []) {
+    if (disabled.has(m.slug ?? "")) m.ignored = true;
+  }
+  check.calculateTotal?.();
+}
+
+/** `renderCheckModifiersDialog` handler. If a strike attack queued disabled slugs, apply
+ *  them to the (post-clone) check and resolve the dialog headlessly — no UI is shown.
+ *  Inert (leaves the dialog untouched) for any other check and on desktop. */
+export function onRenderCheckDialog(app: CheckDialogLike): void {
+  const pending = pendingDisabledSlugs;
+  if (!pending) return;
+  pendingDisabledSlugs = null; // one-shot: consume the queue
+  try {
+    app.element?.hide?.(); // hide before close to avoid a flash
+    if (app.check) applyDisabledSlugsToCheck(app.check, pending);
+    app.isResolved = true;
+    app.resolve?.(true);
+    app.close?.();
+  } catch (err) {
+    console.error("[pf2e-mobile] strike attack dialog toggle failed", err);
+    app.resolve?.(true); // never hang the roll
+  }
+}
+
+let dialogHookInstalled = false;
+/** Register the dialog interceptor once. Inert unless a strike roll queues slugs, so it is
+ *  a no-op for every other check and entirely on desktop. Call at startup. */
+export function installStrikeRollDialogHook(): void {
+  if (dialogHookInstalled) return;
+  dialogHookInstalled = true;
+  (Hooks as unknown as { on?: (n: string, fn: (app: CheckDialogLike) => void) => void })?.on?.(
+    "renderCheckModifiersDialog",
+    onRenderCheckDialog,
+  );
+}
+
+/** Roll one MAP variant of a strike (variantIndex 0/1/2 → MAP 0/-5/-10). With
+ *  `disabledSlugs` (the user unchecked some modifiers), queue them and FORCE PF2e's
+ *  modifier dialog so `onRenderCheckDialog` applies them to the FINAL, post-clone check
+ *  (a live-strike mutation is lost to the roll's contextual actor clone). With no
+ *  toggles, keep the dialog suppressed as before. */
 export function rollStrikeAttack(
   actorId: string,
   strikeIndex: number,
@@ -62,23 +132,15 @@ export function rollStrikeAttack(
   opts?: { disabledSlugs?: string[] },
 ): Promise<void> {
   return guard(async () => {
-    const strike = getStrike(actorId, strikeIndex);
-    const variant = strike.variants?.[variantIndex];
+    const variant = getStrike(actorId, strikeIndex).variants?.[variantIndex];
     if (!variant) throw new Error(`no variant ${variantIndex} on strike ${strikeIndex}`);
-    const disabled = new Set(opts?.disabledSlugs ?? []);
-    const touched = (strike.modifiers ?? []).filter((m) => disabled.has(m.slug ?? ""));
-    const prev = touched.map((m) => m.ignored ?? false);
+    const slugs = opts?.disabledSlugs ?? [];
+    if (slugs.length === 0) return variant.roll(skipDialogEvent("showCheckDialogs"));
+    pendingDisabledSlugs = new Set(slugs);
     try {
-      if (touched.length) {
-        touched.forEach((m) => { m.ignored = true; });
-        strike.calculateTotal?.();
-      }
-      await variant.roll(skipDialogEvent("showCheckDialogs"));
+      return await variant.roll(showDialogEvent("showCheckDialogs"));
     } finally {
-      if (touched.length) {
-        touched.forEach((m, i) => { m.ignored = prev[i]; });
-        strike.calculateTotal?.();
-      }
+      pendingDisabledSlugs = null;
     }
   });
 }

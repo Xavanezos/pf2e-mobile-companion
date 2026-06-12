@@ -1,5 +1,6 @@
 import { registerSettings, isMobileActive } from "./foundry/settings";
 import { applyTakeover, removeTakeover, isTakeoverActive } from "./foundry/takeover";
+import { installStrikeRollDialogHook } from "./foundry/actor/strikeActions";
 
 const MODULE_ID = "pf2e-mobile-companion";
 
@@ -18,6 +19,7 @@ Hooks.once("ready", async () => {
     return;
   }
   console.log(`${MODULE_ID} | mobile mode — taking over`);
+  installStrikeRollDialogHook();
   await installReactRefreshPreamble();
   await applyTakeover(mountApp);
 });
@@ -27,6 +29,7 @@ async function onUiModeChange(): Promise<void> {
   const shouldBeMobile = isMobileActive();
   const active = isTakeoverActive();
   if (shouldBeMobile && !active) {
+    installStrikeRollDialogHook();
     await installReactRefreshPreamble();
     await applyTakeover(mountApp);
   } else if (!shouldBeMobile && active) {

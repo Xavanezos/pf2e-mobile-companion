@@ -6,10 +6,16 @@ import {
   runAuxiliaryAction,
   previewStrikeDamage,
   previewStrikeAttack,
+  applyDisabledSlugsToCheck,
+  onRenderCheckDialog,
   setStrikeAmmo,
 } from "../src/foundry/actor/strikeActions";
 
-interface Call { method: string; args: unknown[]; snapshot?: boolean[]; }
+interface Call { method: string; args: unknown[]; }
+
+/** Optional callback fired by the variant.roll stub WHILE a roll is in flight — used to
+ *  simulate PF2e rendering the modifier dialog so the render-hook path runs mid-roll. */
+let duringRoll: (() => void) | null = null;
 
 function stub(): Call[] {
   const calls: Call[] = [];
@@ -21,8 +27,8 @@ function stub(): Call[] {
   const variant = (i: number, penalty: number) => ({
     penalty,
     roll: (...args: unknown[]) => {
-      // Snapshot each modifier's `ignored` AT ROLL TIME — proves the flip is live during the roll.
-      calls.push({ method: `variant${i}.roll`, args, snapshot: modifiers.map((m) => m.ignored) });
+      duringRoll?.(); // simulate PF2e rendering the modifier dialog mid-roll
+      calls.push({ method: `variant${i}.roll`, args });
       return Promise.resolve();
     },
   });
@@ -58,7 +64,7 @@ function stub(): Call[] {
 
 describe("strike actions", () => {
   let calls: Call[];
-  beforeEach(() => { calls = stub(); });
+  beforeEach(() => { duringRoll = null; calls = stub(); });
 
   it("rolls the chosen MAP variant with a skip-dialog click event (mirrors showCheckDialogs)", async () => {
     await rollStrikeAttack("a", 0, 1);
@@ -68,18 +74,56 @@ describe("strike actions", () => {
     expect(arg.event?.shiftKey).toBe(true);
   });
 
-  it("rolls with disabledSlugs: ignores matching modifiers DURING the roll, restores AFTER", async () => {
-    await rollStrikeAttack("a", 0, 0, { disabledSlugs: ["potency"] });
-    const rollCall = calls.find((c) => c.method === "variant0.roll");
-    expect(rollCall?.snapshot).toEqual([false, true]); // ability live, potency ignored at roll time
-    const live = (globalThis as unknown as { game: { actors: { get(): { system: { actions: { modifiers: { ignored: boolean }[]; totalModifier: number }[] } } } } }).game.actors.get().system.actions[0];
-    expect(live.modifiers.map((m) => m.ignored)).toEqual([false, false]); // restored
-    expect(live.totalModifier).toBe(5);
-  });
-
-  it("rolling with no disabledSlugs touches no modifiers (no calculateTotal)", async () => {
+  it("rolling with no disabledSlugs suppresses the dialog (shiftKey mirrors the setting)", async () => {
     await rollStrikeAttack("a", 0, 1);
     expect(calls.map((c) => c.method)).toEqual(["variant1.roll"]);
+    const arg = calls[0].args[0] as { event?: { shiftKey?: boolean } };
+    expect(arg.event?.shiftKey).toBe(true); // showCheckDialogs=true → skip event uses shiftKey true
+  });
+
+  it("rolling with disabledSlugs forces the modifier dialog (shiftKey inverted)", async () => {
+    await rollStrikeAttack("a", 0, 0, { disabledSlugs: ["potency"] });
+    const arg = (calls.find((c) => c.method === "variant0.roll"))?.args[0] as { event?: { shiftKey?: boolean } };
+    expect(arg.event?.shiftKey).toBe(false); // forces the dialog so the render hook can drive it
+  });
+
+  it("applies queued disabled slugs to the post-clone check when the dialog renders mid-roll", async () => {
+    const checkModifiers = [
+      { slug: "ability", ignored: false },
+      { slug: "frightened", ignored: false },
+    ];
+    let calc = 0;
+    let resolved: boolean | null = null;
+    const closed: boolean[] = [];
+    const fakeDialog = {
+      check: { modifiers: checkModifiers, calculateTotal: () => { calc++; } },
+      resolve: (v: boolean) => { resolved = v; },
+      close: () => { closed.push(true); },
+      element: { hide: () => {} },
+    };
+    // The strike roll forces the dialog; simulate PF2e rendering it mid-roll.
+    duringRoll = () => onRenderCheckDialog(fakeDialog);
+    await rollStrikeAttack("a", 0, 0, { disabledSlugs: ["frightened"] });
+    expect(checkModifiers.map((m) => m.ignored)).toEqual([false, true]); // only frightened ignored
+    expect(calc).toBe(1); // recomputed
+    expect(resolved).toBe(true); // dialog resolved → roll proceeds
+    expect(closed).toEqual([true]); // dialog closed headlessly
+  });
+
+  it("the dialog hook is inert when no strike roll queued slugs", () => {
+    const checkModifiers = [{ slug: "ability", ignored: false }];
+    let resolved = false;
+    onRenderCheckDialog({ check: { modifiers: checkModifiers, calculateTotal() {} }, resolve: () => { resolved = true; } });
+    expect(checkModifiers[0].ignored).toBe(false); // untouched — left for the real (non-mobile) dialog
+    expect(resolved).toBe(false);
+  });
+
+  it("applyDisabledSlugsToCheck disables matching modifiers (by slug) and recomputes", () => {
+    const mods = [{ slug: "a", ignored: false }, { slug: "b", ignored: false }];
+    let calc = 0;
+    applyDisabledSlugsToCheck({ modifiers: mods, calculateTotal: () => { calc++; } }, ["b"]);
+    expect(mods.map((m) => m.ignored)).toEqual([false, true]);
+    expect(calc).toBe(1);
   });
 
   it("rolls damage and critical with showDamageDialogs mirrored into the event", async () => {
