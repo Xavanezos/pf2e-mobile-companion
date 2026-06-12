@@ -4,6 +4,7 @@ import { ChatTab } from "./tabs/ChatTab";
 import { ActionsTab } from "./tabs/ActionsTab";
 import { Placeholder } from "./tabs/Placeholder";
 import { MapTab } from "./tabs/MapTab";
+import { CombatTab } from "./combat/CombatTab";
 
 export function TabContent() {
   const activeTab = useAppStore((s) => s.activeTab);
@@ -13,7 +14,7 @@ export function TabContent() {
     case "actions":
       return <ActionsTab />;
     case "combat":
-      return <Placeholder title="Combat Tracker" phase="Coming in Phase 5" />;
+      return <CombatTab />;
     case "chat":
       return <ChatTab />;
     case "journal":
