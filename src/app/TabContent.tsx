@@ -3,6 +3,7 @@ import { SheetTab } from "./SheetTab";
 import { ChatTab } from "./tabs/ChatTab";
 import { ActionsTab } from "./tabs/ActionsTab";
 import { Placeholder } from "./tabs/Placeholder";
+import { MapTab } from "./tabs/MapTab";
 
 export function TabContent() {
   const activeTab = useAppStore((s) => s.activeTab);
@@ -18,7 +19,7 @@ export function TabContent() {
     case "journal":
       return <Placeholder title="Journals" phase="Coming in Phase 6" />;
     case "map":
-      return <Placeholder title="Battle Map" phase="Coming in Phase 7" />;
+      return <MapTab />;
     default:
       return null;
   }
