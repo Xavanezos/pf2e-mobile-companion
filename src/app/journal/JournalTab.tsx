@@ -3,6 +3,7 @@ import { useAppStore } from "../store";
 import { useJournals } from "./useJournals";
 import { useJournalEntry } from "./useJournalEntry";
 import { JournalPage } from "./JournalPage";
+import { ZoomableImage } from "./ZoomableImage";
 import type { LinkHandlers } from "../../foundry/journal/links";
 import type { EntryNode, FolderNode } from "../../foundry/journal/types";
 
@@ -81,6 +82,7 @@ function EntryRow({ entry, depth, onOpen }: { entry: EntryNode; depth: number; o
 
 function EntryView({ entryId, onBack, links }: { entryId: string; onBack: () => void; links: LinkHandlers }) {
   const entry = useJournalEntry(entryId);
+  const [zoomSrc, setZoomSrc] = useState<string | null>(null);
   return (
     <div className="flex h-full flex-col">
       <header className="flex shrink-0 items-center gap-2 border-b border-zinc-800 bg-zinc-900 px-2 py-2">
@@ -95,9 +97,10 @@ function EntryView({ entryId, onBack, links }: { entryId: string; onBack: () => 
         ) : entry.pages.length === 0 ? (
           <div className="p-4 text-sm text-zinc-500">No readable pages.</div>
         ) : (
-          entry.pages.map((p) => <JournalPage key={p.id} page={p} links={links} />)
+          entry.pages.map((p) => <JournalPage key={p.id} page={p} links={links} onImageTap={setZoomSrc} />)
         )}
       </div>
+      {zoomSrc && <ZoomableImage src={zoomSrc} onClose={() => setZoomSrc(null)} />}
     </div>
   );
 }
