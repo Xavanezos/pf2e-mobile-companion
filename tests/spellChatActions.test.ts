@@ -64,10 +64,11 @@ function stub() {
 }
 
 describe("rollSpellDamage", () => {
-  it("calls rollDamage on the message's cast spell", async () => {
+  it("calls rollDamage on the message's cast spell with a click event", async () => {
     const { calls } = stub();
     await rollSpellDamage("m1");
     expect(calls[0].method).toBe("rollDamage");
+    expect((calls[0].args[0] as { type?: string }).type).toBe("click");
   });
   it("never throws when there is no spell on the message", async () => {
     stub();
@@ -84,6 +85,8 @@ describe("rollSpellSave", () => {
     expect(arg.dc).toEqual({ value: 18 });
     expect(arg.rollTwice).toBe("keep-higher");
     expect(arg.skipDialog).toBe(true);
+    expect(arg.origin).toEqual({ id: "caster" });
+    expect(arg.item).toBeTruthy();
   });
   it("never throws for an unknown save type", async () => {
     stub();
