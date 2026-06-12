@@ -27,6 +27,32 @@ describe("buildSceneView", () => {
     expect(v.tokens[0]).toMatchObject({ left: 100, top: 200, width: 200, height: 100, img: "gob.webp" });
   });
 
+  it("sizes the art by PF2e creature size: med=1, lg/huge/grg=N, sm/tiny sub-cell, all centred in the grid footprint", () => {
+    const sized = (size: string, footprint = 1) =>
+      token({ width: footprint, height: footprint, actor: { id: "a", system: { traits: { size: { value: size } } } } });
+    const got = (size: string, footprint?: number) => {
+      const tk = buildSceneView(scene([sized(size, footprint)]), DIMS, GM).tokens[0];
+      return { w: tk.width, h: tk.height, fw: tk.footprintW, fh: tk.footprintH };
+    };
+    expect(got("tiny")).toEqual({ w: 25, h: 25, fw: 100, fh: 100 });   // ¼ cell, centred in 1
+    expect(got("sm")).toEqual({ w: 50, h: 50, fw: 100, fh: 100 });     // ½ cell
+    expect(got("med")).toEqual({ w: 100, h: 100, fw: 100, fh: 100 });  // 1 cell
+    expect(got("lg", 2)).toEqual({ w: 200, h: 200, fw: 200, fh: 200 }); // 2×2
+    expect(got("huge", 3)).toEqual({ w: 300, h: 300, fw: 300, fh: 300 }); // 3×3
+    expect(got("grg", 4)).toEqual({ w: 400, h: 400, fw: 400, fh: 400 }); // 4×4
+  });
+
+  it("falls back to the token's grid footprint when the actor has no PF2e size", () => {
+    const v = buildSceneView(scene([token({ width: 2, height: 3, actor: { id: "a" } })]), DIMS, GM);
+    expect(v.tokens[0]).toMatchObject({ width: 200, height: 300, footprintW: 200, footprintH: 300 });
+  });
+
+  it("passes the Foundry texture scale through (so a token scaled to fill its frame fills the cell), defaulting to 1", () => {
+    const scaled = token({ texture: { src: "x.webp", scaleX: 1.4, scaleY: 1.6 } });
+    expect(buildSceneView(scene([scaled]), DIMS, GM).tokens[0]).toMatchObject({ scaleX: 1.4, scaleY: 1.6 });
+    expect(buildSceneView(scene([token()]), DIMS, GM).tokens[0]).toMatchObject({ scaleX: 1, scaleY: 1 });
+  });
+
   it("omits hidden + secret tokens for a player, keeps them for the GM", () => {
     const ts = [token({ id: "vis" }), token({ id: "hid", hidden: true }), token({ id: "sec", isSecret: true })];
     expect(buildSceneView(scene(ts), DIMS, PLAYER).tokens.map((t) => t.id)).toEqual(["vis"]);

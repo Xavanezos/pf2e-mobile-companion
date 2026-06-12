@@ -41,16 +41,27 @@ export function TokenSprite({
   const overflow = statuses.length > MAX_ICONS ? statuses.length - (MAX_ICONS - 1) : 0;
   const shownStatuses = overflow > 0 ? statuses.slice(0, MAX_ICONS - 1) : statuses;
 
+  // Centre the visible art within the grid footprint: medium/large+ fill it exactly,
+  // tiny/small are smaller than their 1-cell footprint and sit centred in the cell.
+  const left = token.left + (token.footprintW - token.width) / 2;
+  const top = token.top + (token.footprintH - token.height) / 2;
+
   return (
     <div
       data-token-id={token.id}
       data-mine={token.isMine ? "1" : undefined}
       className={`absolute ${token.isMine ? "cursor-grab" : ""} ${token.hidden ? "opacity-50" : ""} ${dragging ? "z-10 cursor-grabbing" : ""}`}
-      style={{ left: token.left, top: token.top, width: token.width, height: token.height }}
+      style={{ left, top, width: token.width, height: token.height }}
     >
       <div className={`h-full w-full overflow-hidden rounded bg-zinc-800 ${ring} ${token.isCurrent ? "animate-pulse" : ""} ${dragging ? "brightness-110 ring-indigo-200" : ""}`}>
         {token.img ? (
-          <img src={token.img} alt="" draggable={false} className="pointer-events-none h-full w-full select-none object-cover" />
+          <img
+            src={token.img}
+            alt=""
+            draggable={false}
+            className="pointer-events-none h-full w-full select-none object-cover"
+            style={token.scaleX !== 1 || token.scaleY !== 1 ? { transform: `scale(${token.scaleX}, ${token.scaleY})` } : undefined}
+          />
         ) : (
           <span className="flex h-full w-full items-center justify-center text-zinc-500">
             <i className="fas fa-user" aria-hidden="true" />

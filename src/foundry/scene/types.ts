@@ -21,9 +21,13 @@ export interface TokenView {
   name: string;                  // "" when the player may not see it (no nameplate)
   img: string | null;
   left: number;
-  top: number;                   // scene px (padded-canvas space) = token.x / token.y
+  top: number;                   // scene px (padded-canvas space) = token.x / token.y (footprint top-left)
   width: number;
-  height: number;                // px (grid units × size)
+  height: number;                // visible art size, px (PF2e creature size × grid size)
+  footprintW: number;
+  footprintH: number;            // grid footprint, px (token grid units × size); art is centred within it
+  scaleX: number;
+  scaleY: number;                // Foundry texture.scaleX/scaleY — art zoom within the frame (1 = none)
   isMine: boolean;               // active character owns the actor → draggable
   isCurrent: boolean;            // current combatant's token → turn ring
   targeted: boolean;             // in the user's target set → reticle
@@ -66,12 +70,12 @@ export interface TokenLike {
   disposition?: number;
   isSecret?: boolean;            // PF2e getter: SECRET disposition the viewer can't reveal
   playersCanSeeName?: boolean;   // PF2e getter
-  texture?: { src?: string | null } | null;
+  texture?: { src?: string | null; scaleX?: number; scaleY?: number } | null;
   actor?: {
     id: string;
     hasPlayerOwner?: boolean;
     isOwner?: boolean;             // current viewer owns this actor (un-masks unidentified effects)
-    system?: { attributes?: { hp?: { value?: number; max?: number } } };
+    system?: { attributes?: { hp?: { value?: number; max?: number } }; traits?: { size?: { value?: string } } };
     conditions?: { active: ConditionLike[] };
     itemTypes?: { effect: EffectLike[] };
   } | null;

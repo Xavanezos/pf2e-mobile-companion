@@ -4,6 +4,12 @@ import type {
 import type { ConditionView, EffectView, ConditionLike, EffectLike } from "../actor/types";
 import { effectBadgeLabel } from "../actor/view";
 
+/** PF2e creature size → grid cells the token's art should span. Large/Huge/Gargantuan
+ *  match their multi-cell footprint; tiny/small render smaller than their 1-cell
+ *  footprint (and get centred in it by the sprite). Tokens with no PF2e size (loot,
+ *  hazards, generic) fall back to the token's own grid width/height. */
+const SIZE_CELLS: Record<string, number> = { tiny: 0.25, sm: 0.5, med: 1, lg: 2, huge: 3, grg: 4 };
+
 /** Pure: build the player-facing battle-map view from the live active scene.
  *  Owns every visibility rule (GM-hidden + PF2e-secret tokens omitted for
  *  players, names blanked, NPC HP hidden) so the renderer owns none — the same
@@ -34,14 +40,23 @@ export function buildSceneView(
     const conditions = mapTokenConditions(t.actor?.conditions?.active ?? []);
     const effects = mapTokenEffects(t.actor?.itemTypes?.effect ?? [], canIdentifyEffects);
 
+    // Visible art size from PF2e creature size; the grid footprint stays the token's
+    // own width/height so sub-cell tokens (tiny/small) can be centred in their cell.
+    const sizeKey = t.actor?.system?.traits?.size?.value;
+    const cells = sizeKey != null ? SIZE_CELLS[sizeKey] : undefined;
+
     tokens.push({
       id: t.id,
       name: canSeeName ? t.name : "",
       img: t.texture?.src ?? null,
       left: t.x,
       top: t.y,
-      width: t.width * dims.size,
-      height: t.height * dims.size,
+      width: (cells ?? t.width) * dims.size,
+      height: (cells ?? t.height) * dims.size,
+      footprintW: t.width * dims.size,
+      footprintH: t.height * dims.size,
+      scaleX: t.texture?.scaleX ?? 1,
+      scaleY: t.texture?.scaleY ?? 1,
       isMine,
       isCurrent: t.id === ctx.currentTokenId,
       targeted: targeted.has(t.id),
