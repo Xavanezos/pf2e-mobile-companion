@@ -3,11 +3,13 @@ import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent }
 import { useAppStore } from "../store";
 import { useScene } from "./useScene";
 import { TokenSprite } from "./TokenSprite";
+import { TokenInfoPopup } from "./TokenInfoPopup";
 import { screenToScene, type ViewTransform } from "../../foundry/scene/geometry";
 import { moveToken } from "../../foundry/scene/actions";
 
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 4;
+const TAP_SLOP = 6; // px of screen movement under which a press counts as a tap, not a drag/pan
 const clampZoom = (z: number) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z));
 
 interface DragState {
@@ -18,13 +20,19 @@ interface DragState {
   left: number; // latest optimistic token origin (scene px)
   top: number;
 }
+interface PressState {
+  pointerId: number;
+  tokenId: string | null; // token the press landed on, if any
+  x: number;
+  y: number; // press origin (screen px)
+  moved: boolean;
+}
 
 /** The battle map: a transformed "stage" the size of the padded scene, holding
  *  the background image and one positioned token per visible token, over the live
  *  `game.scenes.active` documents (no PIXI canvas). One-finger pan, two-finger
- *  pinch-zoom (+ wheel for desktop), and drag-your-own-token to move it
- *  (`moveToken` → Foundry validates ownership server-side; the optimistic position
- *  is replaced by the snapped truth on the next `updateToken`). */
+ *  pinch-zoom (+ wheel for desktop), drag-your-own-token to move it (`moveToken`,
+ *  server-validated), and tap-a-token for an info popup. */
 export function BattleMap() {
   const actorId = useAppStore((s) => s.actorId);
   const view = useScene(actorId);
@@ -39,7 +47,9 @@ export function BattleMap() {
   const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
   const anchor = useRef<{ x: number; y: number; dist: number } | null>(null);
   const dragRef = useRef<DragState | null>(null);
+  const pressRef = useRef<PressState | null>(null);
   const [drag, setDrag] = useState<{ id: string; left: number; top: number } | null>(null);
+  const [infoId, setInfoId] = useState<string | null>(null);
 
   // Fit the whole scene into the viewport on mount / scene-dimension change.
   const dimsKey = view ? `${view.dims.width}x${view.dims.height}` : "none";
@@ -69,8 +79,10 @@ export function BattleMap() {
     if (dragRef.current) return; // ignore extra pointers mid-drag
     const lp = localPoint(e);
     const cur0 = tRef.current;
-    // Start a token drag if the press landed on one of MY tokens (single pointer).
     const tokenEl = (e.target as HTMLElement).closest("[data-token-id]") as HTMLElement | null;
+    pressRef.current = { pointerId: e.pointerId, tokenId: tokenEl?.dataset.tokenId ?? null, x: lp.x, y: lp.y, moved: false };
+
+    // Start a token drag if the press landed on one of MY tokens (single pointer).
     if (tokenEl?.dataset.mine && cur0 && view && pointers.current.size === 0) {
       const id = tokenEl.dataset.tokenId!;
       const tok = view.tokens.find((tk) => tk.id === id);
@@ -91,6 +103,11 @@ export function BattleMap() {
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     const cur0 = tRef.current;
     if (!cur0) return;
+    const pr = pressRef.current;
+    if (pr && pr.pointerId === e.pointerId && !pr.moved) {
+      const lp = localPoint(e);
+      if (Math.hypot(lp.x - pr.x, lp.y - pr.y) > TAP_SLOP) pr.moved = true;
+    }
     const d = dragRef.current;
     if (d && d.pointerId === e.pointerId) {
       const lp = localPoint(e);
@@ -115,15 +132,19 @@ export function BattleMap() {
   };
 
   const endPointer = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const pr = pressRef.current;
+    const isTap = !!pr && pr.pointerId === e.pointerId && !pr.moved && !!pr.tokenId;
     const d = dragRef.current;
     if (d && d.pointerId === e.pointerId) {
-      if (view) void moveToken(view.id, d.id, d.left, d.top);
+      if (!isTap && view) void moveToken(view.id, d.id, d.left, d.top); // a real drag moves; a tap doesn't
       dragRef.current = null;
       setDrag(null);
-      return;
+    } else {
+      pointers.current.delete(e.pointerId);
+      anchor.current = pointers.current.size ? gestureState() : null;
     }
-    pointers.current.delete(e.pointerId);
-    anchor.current = pointers.current.size ? gestureState() : null;
+    if (isTap && pr?.tokenId) setInfoId(pr.tokenId);
+    if (pr?.pointerId === e.pointerId) pressRef.current = null;
   };
 
   const onWheel = (e: ReactWheelEvent<HTMLDivElement>) => {
@@ -147,6 +168,7 @@ export function BattleMap() {
   }
 
   const showLabels = !!t && t.zoom >= 0.35;
+  const infoToken = infoId ? view.tokens.find((tk) => tk.id === infoId) ?? null : null;
 
   return (
     <div
@@ -188,6 +210,7 @@ export function BattleMap() {
           })}
         </div>
       )}
+      {infoToken && <TokenInfoPopup token={infoToken} onClose={() => setInfoId(null)} />}
     </div>
   );
 }
