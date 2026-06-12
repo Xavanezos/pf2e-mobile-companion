@@ -5,11 +5,13 @@ import { useFullscreen } from "./useFullscreen";
 import { setUiMode } from "../foundry/settings";
 import { useChatFeed } from "./chat/useChatFeed";
 import { ChatToast } from "./chat/ChatToast";
+import { useTurnAlert } from "./combat/useTurnAlert";
 
 export function Shell() {
   const { isFullscreen, toggle } = useFullscreen();
   const actorId = useAppStore((s) => s.actorId);
   useChatFeed();
+  useTurnAlert(actorId);
   const title = actorId
     ? ((game as any).actors.get(actorId)?.name ?? "PF2e Mobile")
     : "PF2e Mobile";
