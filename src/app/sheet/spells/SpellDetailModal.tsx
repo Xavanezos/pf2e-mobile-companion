@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { Modal } from "../parts/Modal";
 import { ActionGlyph } from "../parts/ActionGlyph";
 import { Chip } from "../parts/Chip";
@@ -27,7 +27,17 @@ export function SpellDetailModal({
   const detail = useMemo(() => readSpell(actorId, spellId), [actorId, spellId]);
   const [html, setHtml] = useState(detail?.descriptionHtml ?? "");
   const effectUuid = useMemo(() => findSpellEffectUuid(detail?.descriptionHtml), [detail?.descriptionHtml]);
-  const [showEffect, setShowEffect] = useState(false);
+  const [effectModalUuid, setEffectModalUuid] = useState<string | null>(null);
+
+  // Tapping the spell-effect link inside the description opens the same popup as the
+  // chat card (parity); other content links fall through unchanged.
+  const onDescriptionClick = (e: MouseEvent) => {
+    const uuid = (e.target as Element).closest?.("a[data-uuid]")?.getAttribute("data-uuid");
+    if (uuid && uuid.includes("spell-effects")) {
+      e.preventDefault();
+      setEffectModalUuid(uuid);
+    }
+  };
 
   useEffect(() => {
     let alive = true;
@@ -75,7 +85,7 @@ export function SpellDetailModal({
       )}
       {effectUuid && (
         <button
-          onClick={() => setShowEffect(true)}
+          onClick={() => setEffectModalUuid(effectUuid)}
           className="mb-3 w-full rounded-md bg-zinc-700 px-3 py-2 text-sm font-semibold text-zinc-100"
         >
           <i className="fas fa-wand-magic-sparkles mr-1.5" aria-hidden="true" />
@@ -84,14 +94,15 @@ export function SpellDetailModal({
       )}
       {html ? (
         <div
+          onClick={onDescriptionClick}
           className="text-sm leading-relaxed text-zinc-200 [&_a]:text-indigo-300 [&_h1]:font-bold [&_h2]:font-bold [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5"
           dangerouslySetInnerHTML={{ __html: html }}
         />
       ) : (
         <div className="text-sm text-zinc-500">No description.</div>
       )}
-      {showEffect && effectUuid && (
-        <SpellEffectModal actorId={actorId} uuid={effectUuid} onClose={() => setShowEffect(false)} />
+      {effectModalUuid && (
+        <SpellEffectModal actorId={actorId} uuid={effectModalUuid} onClose={() => setEffectModalUuid(null)} />
       )}
     </Modal>
   );
