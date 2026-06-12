@@ -1,0 +1,49 @@
+import { useEffect, useState } from "react";
+import { Modal } from "../sheet/parts/Modal";
+import { enrichHtml } from "../../foundry/enrich";
+import { applySpellEffect } from "../../foundry/spells/chatActions";
+
+/** Popup for a spell's linked effect: enriched description + Apply to the bound
+ *  character. Reachable from the cast card and the Spells-tab detail view. */
+export function SpellEffectModal({
+  actorId,
+  uuid,
+  onClose,
+}: {
+  actorId: string;
+  uuid: string;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState("Spell Effect");
+  const [html, setHtml] = useState("");
+  useEffect(() => {
+    let alive = true;
+    void (globalThis as any)?.fromUuid?.(uuid)?.then(async (eff: any) => {
+      if (!alive || !eff) return;
+      setName(eff.name ?? "Spell Effect");
+      const desc: string = eff.system?.description?.value ?? "";
+      const enriched = desc ? await enrichHtml(desc) : "";
+      if (alive) setHtml(enriched);
+    });
+    return () => { alive = false; };
+  }, [uuid]);
+  const onApply = () => { void applySpellEffect(actorId, uuid); onClose(); };
+  return (
+    <Modal title={name} onClose={onClose}>
+      {html ? (
+        <div
+          className="mb-3 text-sm leading-relaxed text-zinc-200 [&_a]:text-indigo-300 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      ) : (
+        <div className="mb-3 text-sm text-zinc-500">No description.</div>
+      )}
+      <button
+        onClick={onApply}
+        className="w-full rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white"
+      >
+        Apply to Character
+      </button>
+    </Modal>
+  );
+}
