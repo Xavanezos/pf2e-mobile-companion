@@ -1,6 +1,6 @@
 # Phase 4 — Strike Interactions (roll prompts, auxiliary actions, chat-card damage) — Design
 
-**Status:** Follow-up to Phase 4 Slice A (strikes), driven by the live checkpoint. Two slices: **A.2a** (auxiliary actions + chat-card damage + roll prompts, low-risk, mirrors proven patterns) built first → checkpoint → **A.2b** (the attack modifier-toggle, PF2e-internal, higher-risk). Live-API paths grounded against the cloned PF2e source (`E:/React Projects/pf2e`); the toggle path especially needs in-play verification (see **Live-API assumptions**).
+**Status:** Follow-up to Phase 4 Slice A (strikes), driven by the live checkpoint. **A.2a** (auxiliary actions + chat-card damage + roll prompts) is **done & live-verified**. Remaining slices: **A.2c** (ranged ammunition selector — independent, low-risk) next, then **A.2b** (the attack modifier-toggle, PF2e-internal, higher-risk). Live-API paths grounded against the cloned PF2e source (`E:/React Projects/pf2e`); the toggle path especially needs in-play verification (see **Live-API assumptions**).
 
 Three pieces of live-test feedback, one unifying idea: on mobile the canvas-bound and dialog-bound paths don't work, so strike rolls currently fire instantly and the attack card's Damage/Crit buttons are dead. We replace both with **our own roll-prompt popups** — the same approach already proven for checks (`BreakdownModal` → Roll) and spells (`DamageRollModal`, card interception). PF2e still owns all the math.
 
@@ -83,6 +83,18 @@ Make the `StrikeAttackModal` modifiers togglable, mirroring PF2e's `CheckModifie
 - **Roll (`strikeActions.ts`):** extend `rollStrikeAttack(actorId, strikeIndex, variantIndex, opts?: { disabledSlugs?: string[] })`: inside `guard`, set `.ignored = true` on matching live modifiers, `calculateTotal()`, `await variant.roll({ event })`, then **restore in a `finally`** (`.ignored = false` on the ones we touched, `calculateTotal()`). Transient and self-healing even on error.
 - **UI:** each modifier row gets a checkbox (checked = not user-disabled). Unchecking calls `previewStrikeAttack` and updates the rows + total; disabled-by-stacking rows render greyed. Roll passes the `disabledSlugs`.
 - **Identity caveat:** modifiers are matched by `slug`; if two share a slug both toggle together (acceptable). The mutation is transient and reset by the next data-prep regardless.
+
+---
+
+## Slice A.2c — ranged ammunition selector (build before A.2b)
+
+A ranged weapon (bow / crossbow / sling) needs an ammunition `<select>` on its strike card. This supersedes the original Phase 4 design's "ammunition — out of scope" note. Independent of, and lower-risk than, A.2b — so it ships first.
+
+- **Data — `buildStrikesView` (mapper):** the prepared strike exposes `strike.ammunition` (`AttackAmmunitionData | null`; grounded `actor/data/base.ts:250`, populated by `getAttackAmmo` `character/document.ts:1468`). It is **null for non-ammo weapons** (melee/thrown — `getAttackAmmo` returns null when `weapon.system.expend` is null), which is exactly our "is this an ammo weapon?" detector. Add `ammo: { options: { id: string; label: string }[]; selectedId: string | null; remaining: number } | null` to `StrikeView`, from `strike.ammunition`: `options` = `ammunition.compatible` (`{id,label}` as PF2e provides), `selectedId` = `ammunition.selected?.id ?? strike.selectedAmmoId`, `remaining` = `ammunition.remaining`.
+- **Action — `setStrikeAmmo(actorId, strikeIndex, ammoId)` (`strikeActions.ts`, guarded):** re-read the live strike by index and update its weapon item — `strike.item.update({ system: { selectedAmmoId: ammoId } })` (field `item/weapon/data.ts:94`; the sheet's own handler does the same, `character/sheet.ts:645`). `ammoId` may be `null` to clear. The `updateItem` hook re-preps → the card reflects the new selection + remaining.
+- **Consumption — unchanged.** `variant.roll()` auto-consumes a round on a ranged attack (`params.consumeAmmo` defaults true when `expend > 0`; `document.ts:1532,1621` → `weapon.consumeAmmo()` `item/weapon/document.ts:835`), and PF2e warns if empty. Our existing `rollStrikeAttack` needs **no change**.
+- **UI — `StrikeCard`:** when `strike.ammo` is non-null, render a styled native `<select>` above the attack row (each option `label`, current `selectedId` selected, plus an empty "— ammunition —" option). `onChange` → `setStrikeAmmo`. A `<select>` is not subject to the Tailwind-v4 `<button>` reset, so it styles cleanly with `bg-*`/`text-*`. **Disable the three attack buttons** (with a "Select ammunition" / "Out of ammunition" hint) when `strike.ammo && (selectedId == null || remaining < 1)` — mirroring PF2e greying an unloaded strike. Damage/Crit are unaffected.
+- **Testing:** mapper test (ammo mapping incl. `remaining`/`selectedId`; `ammo: null` for a melee strike); `setStrikeAmmo` stub test (updates the strike's weapon item, tolerates `null`). Components via typecheck + build + live. **Repeating/magazine weapons** (loaded vs selected) are an edge case — verify in play; v1 targets the common select-ammo path.
 
 ---
 
