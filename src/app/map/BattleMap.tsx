@@ -171,46 +171,50 @@ export function BattleMap() {
   const infoToken = infoId ? view.tokens.find((tk) => tk.id === infoId) ?? null : null;
 
   return (
-    <div
-      ref={viewportRef}
-      className="relative h-full w-full touch-none overflow-hidden bg-black"
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={endPointer}
-      onPointerCancel={endPointer}
-      onWheel={onWheel}
-    >
-      {t && (
-        <div
-          className="absolute left-0 top-0 origin-top-left"
-          style={{
-            width: view.dims.width,
-            height: view.dims.height,
-            transform: `translate3d(${t.panX}px, ${t.panY}px, 0) scale(${t.zoom})`,
-          }}
-        >
-          {view.background && (
-            <img
-              src={view.background}
-              alt=""
-              draggable={false}
-              className="absolute max-w-none select-none"
-              style={{
-                left: view.dims.sceneX,
-                top: view.dims.sceneY,
-                width: view.dims.sceneWidth,
-                height: view.dims.sceneHeight,
-              }}
-            />
-          )}
-          {view.tokens.map((tok) => {
-            const dragging = drag?.id === tok.id;
-            const shown = dragging && drag ? { ...tok, left: drag.left, top: drag.top } : tok;
-            return <TokenSprite key={tok.id} token={shown} showLabel={showLabels} dragging={dragging} />;
-          })}
-        </div>
-      )}
+    <>
+      <div
+        ref={viewportRef}
+        className="relative h-full w-full touch-none overflow-hidden bg-black"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endPointer}
+        onPointerCancel={endPointer}
+        onWheel={onWheel}
+      >
+        {t && (
+          <div
+            className="absolute left-0 top-0 origin-top-left"
+            style={{
+              width: view.dims.width,
+              height: view.dims.height,
+              transform: `translate3d(${t.panX}px, ${t.panY}px, 0) scale(${t.zoom})`,
+            }}
+          >
+            {view.background && (
+              <img
+                src={view.background}
+                alt=""
+                draggable={false}
+                className="absolute max-w-none select-none"
+                style={{
+                  left: view.dims.sceneX,
+                  top: view.dims.sceneY,
+                  width: view.dims.sceneWidth,
+                  height: view.dims.sceneHeight,
+                }}
+              />
+            )}
+            {view.tokens.map((tok) => {
+              const dragging = drag?.id === tok.id;
+              const shown = dragging && drag ? { ...tok, left: drag.left, top: drag.top } : tok;
+              return <TokenSprite key={tok.id} token={shown} showLabel={showLabels} dragging={dragging} />;
+            })}
+          </div>
+        )}
+      </div>
+      {/* Rendered OUTSIDE the pointer-capturing viewport so its X / backdrop taps
+          aren't stolen by the map's setPointerCapture. */}
       {infoToken && <TokenInfoPopup token={infoToken} onClose={() => setInfoId(null)} />}
-    </div>
+    </>
   );
 }
