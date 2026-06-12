@@ -28,4 +28,14 @@ describe("interactionFromControl", () => {
     expect(interactionFromControl({ action: null, save: null, dc: null, uuid: "Actor.abc" }, "m1")).toBeNull();
     expect(interactionFromControl({ action: "other", save: null, dc: null, uuid: null }, "m1")).toBeNull();
   });
+
+  it("maps a strike-damage button (success) to a non-critical strike-damage interaction", () => {
+    expect(interactionFromControl({ action: "strike-damage", save: null, dc: null, uuid: null, outcome: "success" }, "m1"))
+      .toEqual({ kind: "strike-damage", messageId: "m1", critical: false });
+  });
+
+  it("maps a strike-damage button (criticalSuccess) to a critical strike-damage interaction", () => {
+    expect(interactionFromControl({ action: "strike-damage", save: null, dc: null, uuid: null, outcome: "criticalSuccess" }, "m1"))
+      .toEqual({ kind: "strike-damage", messageId: "m1", critical: true });
+  });
 });
