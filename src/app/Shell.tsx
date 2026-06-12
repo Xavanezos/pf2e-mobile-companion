@@ -1,14 +1,16 @@
+import { useState } from "react";
 import { useAppStore } from "./store";
 import { TabBar } from "./TabBar";
 import { TabContent } from "./TabContent";
 import { useFullscreen } from "./useFullscreen";
-import { setUiMode } from "../foundry/settings";
 import { useChatFeed } from "./chat/useChatFeed";
 import { ChatToast } from "./chat/ChatToast";
 import { useTurnAlert } from "./combat/useTurnAlert";
+import { SettingsModal } from "./SettingsModal";
 
 export function Shell() {
   const { isFullscreen, toggle } = useFullscreen();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const actorId = useAppStore((s) => s.actorId);
   useChatFeed();
   useTurnAlert(actorId);
@@ -35,11 +37,11 @@ export function Shell() {
             />
           </button>
           <button
-            onClick={() => void setUiMode("off")}
-            aria-label="Exit to desktop UI"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
             className="flex h-10 w-10 items-center justify-center text-zinc-300"
           >
-            <i className="fas fa-display" aria-hidden="true" />
+            <i className="fas fa-gear" aria-hidden="true" />
           </button>
         </div>
       </header>
@@ -48,6 +50,7 @@ export function Shell() {
       </main>
       <TabBar />
       <ChatToast />
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
     </div>
   );
 }
