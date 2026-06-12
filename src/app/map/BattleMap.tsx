@@ -7,7 +7,7 @@ import { TokenInfoPopup } from "./TokenInfoPopup";
 import { screenToScene, sceneToScreen, type ViewTransform } from "../../foundry/scene/geometry";
 import { moveToken } from "../../foundry/scene/actions";
 import { clearTargets } from "../../foundry/scene/targeting";
-import { snapToCenter, measureDistance, type GridSpec, type Point } from "../../foundry/scene/ruler";
+import { snapToCenter, snapTopLeft, measureDistance, type GridSpec, type Point } from "../../foundry/scene/ruler";
 
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 4;
@@ -19,8 +19,12 @@ interface DragState {
   id: string;
   offX: number; // scene-space offset from the token origin to the grab point
   offY: number;
-  left: number; // latest optimistic token origin (scene px)
+  left: number; // latest optimistic token origin (scene px), grid-snapped
   top: number;
+  startLeft: number; // token origin at drag start (ruler anchor)
+  startTop: number;
+  footprintW: number; // grid footprint (for centre = origin + footprint/2)
+  footprintH: number;
 }
 interface PressState {
   pointerId: number;
@@ -50,7 +54,13 @@ export function BattleMap() {
   const anchor = useRef<{ x: number; y: number; dist: number } | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const pressRef = useRef<PressState | null>(null);
-  const [drag, setDrag] = useState<{ id: string; left: number; top: number } | null>(null);
+  const [drag, setDrag] = useState<{
+    id: string;
+    left: number;
+    top: number;
+    a: Point | null; // drag-ruler start centre (null when no square grid)
+    b: Point | null; // drag-ruler current centre
+  } | null>(null);
   const [infoId, setInfoId] = useState<string | null>(null);
 
   // Ruler mode: while on, one-finger drag measures A→B and pan/pinch/token-drag/
@@ -124,8 +134,19 @@ export function BattleMap() {
       const tok = view.tokens.find((tk) => tk.id === id);
       if (tok) {
         const sp = screenToScene(lp.x, lp.y, cur0);
-        dragRef.current = { pointerId: e.pointerId, id, offX: sp.x - tok.left, offY: sp.y - tok.top, left: tok.left, top: tok.top };
-        setDrag({ id, left: tok.left, top: tok.top });
+        dragRef.current = {
+          pointerId: e.pointerId,
+          id,
+          offX: sp.x - tok.left,
+          offY: sp.y - tok.top,
+          left: tok.left,
+          top: tok.top,
+          startLeft: tok.left,
+          startTop: tok.top,
+          footprintW: tok.footprintW,
+          footprintH: tok.footprintH,
+        };
+        setDrag({ id, left: tok.left, top: tok.top, a: null, b: null });
         viewportRef.current?.setPointerCapture(e.pointerId);
         return;
       }
@@ -153,12 +174,23 @@ export function BattleMap() {
       if (Math.hypot(lp.x - pr.x, lp.y - pr.y) > TAP_SLOP) pr.moved = true;
     }
     const d = dragRef.current;
-    if (d && d.pointerId === e.pointerId) {
+    if (d && d.pointerId === e.pointerId && view) {
       const lp = localPoint(e);
       const sp = screenToScene(lp.x, lp.y, cur0);
-      d.left = sp.x - d.offX;
-      d.top = sp.y - d.offY;
-      setDrag({ id: d.id, left: d.left, top: d.top });
+      const grid = gridSpec();
+      // snapTopLeft is a no-op off a square grid → token follows the finger.
+      const snapped = snapTopLeft(grid, sp.x - d.offX, sp.y - d.offY);
+      d.left = snapped.x;
+      d.top = snapped.y;
+      // Drag ruler: centre-to-centre, square grids only (snapToCenter is a
+      // no-op otherwise, which would make a == b and hide the line).
+      let a: Point | null = null;
+      let b: Point | null = null;
+      if (grid.square) {
+        a = { x: d.startLeft + d.footprintW / 2, y: d.startTop + d.footprintH / 2 };
+        b = { x: d.left + d.footprintW / 2, y: d.top + d.footprintH / 2 };
+      }
+      setDrag({ id: d.id, left: d.left, top: d.top, a, b });
       return;
     }
     if (!pointers.current.has(e.pointerId) || !anchor.current) return;
@@ -226,8 +258,12 @@ export function BattleMap() {
   // stage); the "ft" label is a viewport sibling positioned in screen px so its font
   // never scales with zoom.
   const z = t?.zoom ?? 1;
-  const rulerMeas = rulerLine ? measureDistance(gridSpec(), rulerLine.a, rulerLine.b) : null;
-  const rulerLabel = rulerLine && t ? sceneToScreen(rulerLine.b.x, rulerLine.b.y, t) : null;
+  // One ruler render path: measure-mode line, or the live token-drag line (the
+  // two never coexist — ruler-mode suspends token dragging).
+  const activeRuler =
+    rulerLine ?? (drag?.a && drag?.b ? { a: drag.a, b: drag.b } : null);
+  const rulerMeas = activeRuler ? measureDistance(gridSpec(), activeRuler.a, activeRuler.b) : null;
+  const rulerLabel = activeRuler && t ? sceneToScreen(activeRuler.b.x, activeRuler.b.y, t) : null;
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
@@ -284,23 +320,23 @@ export function BattleMap() {
               const shown = dragging && drag ? { ...tok, left: drag.left, top: drag.top } : tok;
               return <TokenSprite key={tok.id} token={shown} showLabel={showLabels} dragging={dragging} />;
             })}
-            {rulerLine && (
+            {activeRuler && (
               <svg
                 className="pointer-events-none absolute left-0 top-0 overflow-visible"
                 width={view.dims.width}
                 height={view.dims.height}
               >
                 <line
-                  x1={rulerLine.a.x}
-                  y1={rulerLine.a.y}
-                  x2={rulerLine.b.x}
-                  y2={rulerLine.b.y}
+                  x1={activeRuler.a.x}
+                  y1={activeRuler.a.y}
+                  x2={activeRuler.b.x}
+                  y2={activeRuler.b.y}
                   stroke="#fbbf24"
                   strokeWidth={Math.max(2, 3 / z)}
                   strokeLinecap="round"
                 />
-                <circle cx={rulerLine.a.x} cy={rulerLine.a.y} r={Math.max(3, 5 / z)} fill="#fbbf24" />
-                <circle cx={rulerLine.b.x} cy={rulerLine.b.y} r={Math.max(3, 5 / z)} fill="#fbbf24" />
+                <circle cx={activeRuler.a.x} cy={activeRuler.a.y} r={Math.max(3, 5 / z)} fill="#fbbf24" />
+                <circle cx={activeRuler.b.x} cy={activeRuler.b.y} r={Math.max(3, 5 / z)} fill="#fbbf24" />
               </svg>
             )}
           </div>
