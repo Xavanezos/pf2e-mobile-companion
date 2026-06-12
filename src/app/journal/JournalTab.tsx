@@ -1,14 +1,27 @@
 import { useState } from "react";
+import { useAppStore } from "../store";
 import { useJournals } from "./useJournals";
 import { useJournalEntry } from "./useJournalEntry";
 import { JournalPage } from "./JournalPage";
+import type { LinkHandlers } from "../../foundry/journal/links";
 import type { EntryNode, FolderNode } from "../../foundry/journal/types";
 
 /** The Journal tab: a read-only reader. A list of permission-filtered entries
- *  grouped by collapsible folders; tapping an entry opens its visible pages. */
+ *  grouped by collapsible folders; tapping an entry opens its visible pages.
+ *  Content links inside a page route via `links` (journal → navigate, actor →
+ *  switch to that sheet). */
 export function JournalTab() {
   const [openEntryId, setOpen] = useState<string | null>(null);
-  if (openEntryId) return <EntryView entryId={openEntryId} onBack={() => setOpen(null)} />;
+  const setActorId = useAppStore((s) => s.setActorId);
+  const setActiveTab = useAppStore((s) => s.setActiveTab);
+  const links: LinkHandlers = {
+    openEntry: (id) => setOpen(id),
+    openActor: (id) => {
+      setActorId(id);
+      setActiveTab("sheet");
+    },
+  };
+  if (openEntryId) return <EntryView entryId={openEntryId} onBack={() => setOpen(null)} links={links} />;
   return <JournalList onOpen={setOpen} />;
 }
 
@@ -66,7 +79,7 @@ function EntryRow({ entry, depth, onOpen }: { entry: EntryNode; depth: number; o
   );
 }
 
-function EntryView({ entryId, onBack }: { entryId: string; onBack: () => void }) {
+function EntryView({ entryId, onBack, links }: { entryId: string; onBack: () => void; links: LinkHandlers }) {
   const entry = useJournalEntry(entryId);
   return (
     <div className="flex h-full flex-col">
@@ -82,7 +95,7 @@ function EntryView({ entryId, onBack }: { entryId: string; onBack: () => void })
         ) : entry.pages.length === 0 ? (
           <div className="p-4 text-sm text-zinc-500">No readable pages.</div>
         ) : (
-          entry.pages.map((p) => <JournalPage key={p.id} page={p} />)
+          entry.pages.map((p) => <JournalPage key={p.id} page={p} links={links} />)
         )}
       </div>
     </div>

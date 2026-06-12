@@ -1,17 +1,27 @@
 import { useEffect, useState } from "react";
 import { enrichHtml } from "../../foundry/enrich";
+import { handlePageClick, type LinkHandlers } from "../../foundry/journal/links";
 import type { PageView } from "../../foundry/journal/types";
 
 /** Renders one journal page by type. Text is enriched (PF2e's TextEditor) then
- *  injected; images fit-to-width (tap to zoom, wired by the parent); pdf links out;
- *  video uses a native player. Content-link routing is added in Task 3. */
-export function JournalPage({ page, onImageTap }: { page: PageView; onImageTap?: (src: string) => void }) {
+ *  injected, with `@UUID`/inline-roll links delegated through `links`; images
+ *  fit-to-width (tap to zoom, wired by the parent); pdf links out; video uses a
+ *  native player. */
+export function JournalPage({
+  page,
+  links,
+  onImageTap,
+}: {
+  page: PageView;
+  links?: LinkHandlers;
+  onImageTap?: (src: string) => void;
+}) {
   return (
     <section className="border-b border-zinc-800 px-4 py-4">
       {page.showTitle && page.name && (
         <h2 className="mb-2 text-lg font-semibold text-zinc-100">{page.name}</h2>
       )}
-      {page.type === "text" && <TextPage html={page.html} />}
+      {page.type === "text" && <TextPage html={page.html} links={links} />}
       {page.type === "image" && page.src && (
         <figure>
           <img
@@ -33,7 +43,7 @@ export function JournalPage({ page, onImageTap }: { page: PageView; onImageTap?:
   );
 }
 
-function TextPage({ html }: { html: string }) {
+function TextPage({ html, links }: { html: string; links?: LinkHandlers }) {
   const [enriched, setEnriched] = useState("");
   useEffect(() => {
     let alive = true;
@@ -47,6 +57,7 @@ function TextPage({ html }: { html: string }) {
   return (
     <div
       className="text-sm leading-relaxed text-zinc-200 [&_a]:text-indigo-300 [&_h1]:mb-2 [&_h1]:text-lg [&_h1]:font-bold [&_h2]:mb-1 [&_h2]:font-bold [&_h3]:font-semibold [&_img]:rounded [&_ol]:mb-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_strong]:font-semibold [&_table]:w-full [&_ul]:mb-2 [&_ul]:list-disc [&_ul]:pl-5"
+      onClick={(e) => links && handlePageClick(e, links)}
       dangerouslySetInnerHTML={{ __html: enriched }}
     />
   );
