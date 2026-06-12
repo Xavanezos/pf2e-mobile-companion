@@ -1,7 +1,7 @@
 # Map Ruler Tool — Design
 
 **Date:** 2026-06-12
-**Status:** Approved (pending spec review)
+**Status:** Implemented on `main` 2026-06-12 (217 tests + typecheck + build green; pending user play-test)
 **Context:** Phase 7 battle map ([[phase-7-progress]]). Adds a distance-measuring ruler to the Map tab.
 
 ## Goal
