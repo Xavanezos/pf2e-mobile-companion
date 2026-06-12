@@ -1,30 +1,51 @@
 import { describe, it, expect } from "vitest";
-import { rollInitiative, endTurn } from "../src/foundry/combat/actions";
+import { rollInitiativeWith, endTurn } from "../src/foundry/combat/actions";
 
-/** Stub the Foundry globals with a live combat. `currentActorId` sets whose turn
- *  it is (omit → no current combatant); `rejectNext` makes nextTurn() reject (a
- *  permission failure); `noCombat` makes game.combat null. */
-function stub(opts: { currentActorId?: string | null; rejectNext?: boolean; noCombat?: boolean } = {}) {
-  const calls = { rolled: [] as string[][], next: 0 };
+/** Stub the Foundry globals. `currentStatistic` is the actor's existing initiative
+ *  statistic; `currentActorId` sets whose turn it is (omit → no current combatant);
+ *  `rejectNext` makes nextTurn() reject (a permission failure); `noCombat` makes
+ *  game.combat null. */
+function stub(opts: { currentActorId?: string | null; rejectNext?: boolean; noCombat?: boolean; currentStatistic?: string } = {}) {
+  const calls = {
+    rolled: [] as Array<{ ids: string[]; options: Record<string, unknown> }>,
+    next: 0,
+    updates: [] as Record<string, unknown>[],
+  };
+  const actor = {
+    system: { initiative: { statistic: opts.currentStatistic ?? "perception" } },
+    update: (data: Record<string, unknown>) => { calls.updates.push(data); return Promise.resolve(true); },
+  };
   const combat = {
     combatant: "currentActorId" in opts ? { actor: { id: opts.currentActorId } } : null,
-    rollInitiative: (ids: string[]) => { calls.rolled.push(ids); return Promise.resolve(true); },
+    rollInitiative: (ids: string[], options: Record<string, unknown>) => { calls.rolled.push({ ids, options }); return Promise.resolve(true); },
     nextTurn: () => { calls.next += 1; return opts.rejectNext ? Promise.reject(new Error("no permission")) : Promise.resolve(true); },
   };
-  (globalThis as { game?: unknown }).game = { combat: opts.noCombat ? null : combat };
+  (globalThis as { game?: unknown }).game = { combat: opts.noCombat ? null : combat, actors: { get: () => actor } };
   (globalThis as { ui?: unknown }).ui = { notifications: { error: () => {} } };
   return calls;
 }
 
-describe("rollInitiative", () => {
-  it("calls combat.rollInitiative with the combatant id", async () => {
-    const calls = stub();
-    await rollInitiative("c1");
-    expect(calls.rolled).toEqual([["c1"]]);
+describe("rollInitiativeWith", () => {
+  it("sets the chosen statistic then rolls with skipDialog (no hidden Foundry dialog)", async () => {
+    const calls = stub({ currentStatistic: "perception" });
+    await rollInitiativeWith("hero", "c1", "athletics");
+    expect(calls.updates).toEqual([{ "system.initiative.statistic": "athletics" }]);
+    expect(calls.rolled).toHaveLength(1);
+    expect(calls.rolled[0].ids).toEqual(["c1"]);
+    expect(calls.rolled[0].options).toMatchObject({ skipDialog: true });
   });
+
+  it("skips the actor update when the chosen statistic already matches", async () => {
+    const calls = stub({ currentStatistic: "stealth" });
+    await rollInitiativeWith("hero", "c1", "stealth");
+    expect(calls.updates).toEqual([]);
+    expect(calls.rolled).toHaveLength(1);
+    expect(calls.rolled[0].options).toMatchObject({ skipDialog: true });
+  });
+
   it("never throws when there is no active encounter", async () => {
     stub({ noCombat: true });
-    await expect(rollInitiative("c1")).resolves.toBeUndefined();
+    await expect(rollInitiativeWith("hero", "c1", "perception")).resolves.toBeUndefined();
   });
 });
 

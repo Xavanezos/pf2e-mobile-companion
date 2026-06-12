@@ -1,15 +1,18 @@
+import { useState } from "react";
 import { useAppStore } from "../store";
 import { useEncounter } from "./useEncounter";
 import { CombatantRow } from "./CombatantRow";
-import { rollInitiative, endTurn } from "../../foundry/combat/actions";
+import { endTurn } from "../../foundry/combat/actions";
+import { InitiativePickerModal } from "./InitiativePickerModal";
 
 /** The Combat tab — a live, player-facing initiative tracker mirroring what the
  *  stock encounter tracker shows a player. Footer gives the two player actions:
- *  Roll Initiative (when in the encounter but unrolled) and End My Turn (enabled
- *  only on your turn; attempts nextTurn(), which Foundry permission-checks). */
+ *  Roll Initiative (opens a skill picker → rolls the chosen statistic) and End My
+ *  Turn (enabled only on your turn; attempts nextTurn(), Foundry permission-checks). */
 export function CombatTab() {
   const actorId = useAppStore((s) => s.actorId);
   const encounter = useEncounter(actorId);
+  const [showInitiativePicker, setShowInitiativePicker] = useState(false);
 
   if (!encounter) {
     return (
@@ -43,7 +46,7 @@ export function CombatTab() {
         <footer className="flex shrink-0 gap-2 border-t border-zinc-800 bg-zinc-900 px-3 py-2">
           {encounter.canRollInitiative ? (
             <button
-              onClick={() => void rollInitiative(encounter.myCombatantId!)}
+              onClick={() => setShowInitiativePicker(true)}
               className="flex-1 rounded-lg bg-indigo-600 py-2 text-sm font-semibold text-white"
             >
               Roll Initiative
@@ -60,6 +63,14 @@ export function CombatTab() {
             </button>
           )}
         </footer>
+      )}
+
+      {showInitiativePicker && actorId && encounter.myCombatantId && (
+        <InitiativePickerModal
+          actorId={actorId}
+          combatantId={encounter.myCombatantId}
+          onClose={() => setShowInitiativePicker(false)}
+        />
       )}
     </div>
   );
