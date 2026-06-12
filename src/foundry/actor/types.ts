@@ -288,3 +288,50 @@ export interface StrikeLike {
   item?: { img?: string };
 }
 export interface StrikeActorLike { system?: { actions?: StrikeLike[] }; }
+
+// ---------- Actions list (Phase 4 Slice B) ----------
+
+/** One action/activity row. `glyph` is an ActionGlyph code ("1"/"2"/"3"/"reaction"/"free") or null. */
+export interface ActionItemView {
+  id: string;
+  name: string;
+  img?: string;
+  glyph: string | null;
+  traits: string[];
+  frequency: { value: number; max: number; per: string } | null;
+}
+export interface ActionGroupView { key: string; label: string; actions: ActionItemView[]; }
+export type ActionsView = ActionGroupView[];
+
+/** Live action/feat item, structurally (read by the mapper). */
+export interface ActionItemLike {
+  id: string;
+  name: string;
+  img?: string;
+  type: string;
+  suppressed?: boolean;
+  system?: {
+    actionType?: { value?: string | null };
+    actions?: { value?: number | null };
+    traits?: { value?: string[] };
+    frequency?: { value?: number; max?: number; per?: string } | null;
+  };
+}
+export interface ActionsActorLike {
+  itemTypes?: { action?: ActionItemLike[]; feat?: ActionItemLike[] };
+  system?: { exploration?: string[] };
+}
+
+// ---------- Toggles (Phase 4 Slice B) ----------
+
+/** One combat roll-option toggle (Rage / Panache / stance …). */
+export interface ToggleView { domain: string; option: string; itemId: string; label: string; checked: boolean; enabled: boolean; }
+export type TogglesView = ToggleView[];
+
+export interface RollOptionToggleLike {
+  itemId?: string; label?: string; placement?: string; domain?: string; option?: string;
+  checked?: boolean; enabled?: boolean; alwaysActive?: boolean;
+}
+export interface TogglesActorLike {
+  synthetics?: { toggles?: Record<string, Record<string, RollOptionToggleLike>> };
+}
