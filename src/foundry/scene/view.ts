@@ -46,5 +46,5 @@ export function buildSceneView(
     });
   }
 
-  return { id: scene.id, background: scene.background?.src ?? null, dims, tokens, hasScene: true };
+  return { id: scene.id, background: scene.background?.src ?? null, grid: scene.grid ?? null, dims, tokens, hasScene: true };
 }

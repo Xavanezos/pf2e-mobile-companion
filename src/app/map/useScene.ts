@@ -33,9 +33,13 @@ export function useScene(actorId: string | null): SceneView | null {
     // Read the background from `_source` to avoid Foundry v14's deprecated
     // `Scene#background` getter (which warns on every render); the value is the
     // same. Tokens stay the live collection (the mapper handles `{ contents }`).
+    const g = scene.grid;
     const sceneArg = {
       id: scene.id,
       background: { src: scene._source?.background?.src ?? scene.background?.src ?? null },
+      grid: g
+        ? { type: g.type ?? 1, color: String(g.color ?? "#000000"), alpha: typeof g.alpha === "number" ? g.alpha : 0.2 }
+        : null,
       tokens: scene.tokens,
     };
     return buildSceneView(sceneArg, scene.dimensions, { isGM, characterActorId: actorId, currentTokenId, targetedIds });

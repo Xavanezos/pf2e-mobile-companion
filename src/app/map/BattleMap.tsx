@@ -171,6 +171,9 @@ export function BattleMap() {
   const showLabels = !!t && t.zoom >= 0.35;
   const infoToken = infoId ? view.tokens.find((tk) => tk.id === infoId) ?? null : null;
   const targetCount = view.tokens.filter((tk) => tk.targeted).length;
+  // Grid line width in scene px that renders ~1px on screen at the current zoom
+  // (the grid lives inside the scaled stage, so a fixed 1px would vanish when zoomed out).
+  const gridLine = t ? Math.max(1, 1 / t.zoom) : 1;
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
@@ -203,6 +206,22 @@ export function BattleMap() {
                   top: view.dims.sceneY,
                   width: view.dims.sceneWidth,
                   height: view.dims.sceneHeight,
+                }}
+              />
+            )}
+            {view.grid && view.grid.type === 1 && (
+              <div
+                className="pointer-events-none absolute"
+                style={{
+                  left: view.dims.sceneX,
+                  top: view.dims.sceneY,
+                  width: view.dims.sceneWidth,
+                  height: view.dims.sceneHeight,
+                  // White lines + difference blend stay visible on any map (most scenes
+                  // leave the grid color black, which vanishes on a dark battle map).
+                  opacity: Math.max(view.grid.alpha, 0.4),
+                  mixBlendMode: "difference",
+                  backgroundImage: `repeating-linear-gradient(to right, #fff 0 ${gridLine}px, transparent ${gridLine}px ${view.dims.size}px), repeating-linear-gradient(to bottom, #fff 0 ${gridLine}px, transparent ${gridLine}px ${view.dims.size}px)`,
                 }}
               />
             )}
