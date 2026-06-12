@@ -4,7 +4,9 @@ import { SpellEntryCard } from "./spells/SpellEntryCard";
 import { SpellRow } from "./spells/SpellRow";
 import { SpellDetailModal } from "./spells/SpellDetailModal";
 import { SpellbookModal } from "./spells/SpellbookModal";
+import { PipStepper } from "./parts/PipStepper";
 import { castSpell, castRitual, consumeActivation } from "../../foundry/spells/cast";
+import { setFocusPoints } from "../../foundry/spells/spellbook";
 import type { SpellEntryView, SpellRowView } from "../../foundry/spells/types";
 import { loc } from "../../foundry/i18n";
 
@@ -26,6 +28,12 @@ export function SpellsPanel({ actorId }: { actorId: string }) {
   const onCast = (entry: SpellEntryView, spell: SpellRowView) =>
     void castSpell(actorId, entry.id, spell.id, { rank: spell.castRank, slotId: spell.slotIndex });
 
+  const focus = view?.focus ?? null;
+  const onFocusAdjust = (d: 1 | -1) => {
+    if (!focus) return;
+    void setFocusPoints(actorId, Math.max(0, Math.min(focus.max, focus.value + d)));
+  };
+
   if (view === null) return <div className="p-4 text-sm text-zinc-500">Loading spells…</div>;
 
   const empty = view.entries.length === 0 && view.ritualRanks.length === 0 && view.activations.length === 0;
@@ -33,6 +41,12 @@ export function SpellsPanel({ actorId }: { actorId: string }) {
 
   return (
     <div>
+      {focus && (
+        <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900 px-3 py-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Focus Points</span>
+          <PipStepper value={focus.value} max={focus.max} onAdjust={onFocusAdjust} />
+        </div>
+      )}
       <nav className="flex gap-1 overflow-x-auto border-b border-zinc-800 bg-zinc-950 px-2 py-1">
         {SECTIONS.map((s) => (
           <button

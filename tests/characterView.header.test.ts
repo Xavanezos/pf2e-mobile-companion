@@ -21,4 +21,15 @@ describe("mapHeader", () => {
     const h = mapHeader(makeCharacterLike({ ancestry: null, class: { name: "Wizard" } }));
     expect(h.ancestryClassLine).toBe("Wizard");
   });
+
+  it("defaults the hero point max to 3 when live data reports 0 or missing", () => {
+    // PF2e PCs always cap at 3 hero points; live actors can surface max:0 — keep 3 dots.
+    const zero = makeCharacterLike();
+    (zero.system.resources.heroPoints as { value: number; max: number }).max = 0;
+    expect(mapHeader(zero).heroPoints).toEqual({ value: 2, max: 3 });
+
+    const missing = makeCharacterLike();
+    delete (zero.system.resources.heroPoints as { max?: number }).max;
+    expect(mapHeader(missing).heroPoints.max).toBe(3);
+  });
 });

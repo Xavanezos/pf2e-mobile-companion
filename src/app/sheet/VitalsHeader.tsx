@@ -1,6 +1,7 @@
 import type { CharacterView } from "../../foundry/actor/types";
 import { Chip } from "./parts/Chip";
 import { Pips } from "./parts/Pips";
+import { PipStepper } from "./parts/PipStepper";
 
 export function VitalsHeader({ header, conditions, onHpTap, onHeroAdjust, onDyingAdjust, onWoundedAdjust, onConditionTap, onConditionAdd, onSwitch }: {
   header: CharacterView["header"];
@@ -30,7 +31,7 @@ export function VitalsHeader({ header, conditions, onHpTap, onHeroAdjust, onDyin
           </div>
           <div className="truncate text-[11px] text-zinc-400">L{header.level} {header.ancestryClassLine}</div>
         </div>
-        <Pips value={header.heroPoints.value} max={header.heroPoints.max} label="Hero" onAdjust={onHeroAdjust} />
+        <PipStepper value={header.heroPoints.value} max={header.heroPoints.max} label="Hero" onAdjust={onHeroAdjust} />
       </div>
 
       {/* HP bar + dying/wounded */}
