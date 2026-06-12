@@ -6,6 +6,8 @@ A Foundry VTT module that replaces the Foundry UI on mobile Chrome with a fast, 
 
 **Architecture in one line:** The player logs into Foundry normally in mobile Chrome; the module detects mobile, suppresses the canvas and stock UI, and mounts a React app that drives everything through the live PF2e system API. No relay server, no reimplemented rules, permissions enforced by Foundry itself.
 
+> **Build order (revised 2026-06-12):** Phase 5 is done. **Journals (Phase 6) is deferred to the end of the roadmap** (lowest priority — its full section now lives at the bottom of this file). The **battle map (Phase 7) is built next**, then Journals. Phase numbers are kept stable as identifiers (historical reports reference "Phase 6 = Journals", "Phase 7 = battle map"); only the *order of work* changed.
+
 ---
 
 ## Phase 0 — Dev environment & scaffold
@@ -117,27 +119,24 @@ This is the heart of it. Everything goes through the system so rule elements, yo
 
 ---
 
-## Phase 5 — Initiative & combat tracker
+## Phase 5 — Initiative & combat tracker ✅ Done (2026-06-12)
 
-- [ ] Read `game.combat`: `combat.turns` (ordered combatants), `combat.combatant` (current turn), round number.
-- [ ] Render the order: portraits, names, initiative values. Respect visibility — hide combatants the player shouldn't see (`combatant.hidden`, token disposition); mirror what the stock tracker shows a player.
-- [ ] Highlight "your turn" prominently; consider vibration (`navigator.vibrate`) when the player's turn starts.
-- [ ] Roll initiative button when combat starts and the player hasn't rolled (`combat.rollInitiative` / the actor's initiative check, which in PF2e can be a skill — use `actor.initiative.roll()`).
-- [ ] End-turn button (players can end their own turn: `combat.nextTurn()` is permission-checked).
-- [ ] Hooks: `updateCombat`, `createCombatant`, `deleteCombatant`, `combatStart`, `deleteCombat`.
+> Spec: `docs/superpowers/specs/2026-06-12-phase-5-combat-tracker-design.md` · Plan: `docs/superpowers/plans/2026-06-12-phase-5-combat-tracker.md`. Live, player-facing **Combat** tab mirroring the stock tracker's player view (custom mobile list over `game.combat`, not the stock HTML). Built in 5 commits (4 plan tasks + a Roll-Initiative skill-picker popup follow-up). **177 tests** + typecheck + prod build green. Two paths confirm only in play (flagged for the live checklist): the **End My Turn** `nextTurn()` permission and the **vibrate**.
 
-**Milestone:** combat tab shows live initiative and buzzes the player on their turn.
+- [x] Read `game.combat`: `combat.turns` (ordered combatants), `combat.combatant` (current turn), round number — pure `buildEncounterView` mapper.
+- [x] Render the order: portraits, names, initiative values. Respect visibility — hide combatants the player shouldn't see (`combatant.hidden`, `playersCanSeeName`); mirror what the stock tracker shows a player. NPC HP hidden from players.
+- [x] Highlight "your turn" prominently; vibration (`navigator.vibrate`) on the transition into the player's turn (`useTurnAlert`, always-on in Shell).
+- [x] Roll initiative button when combat starts and the player hasn't rolled — a skill-picker popup → `combat.rollInitiative([id])` with the chosen statistic.
+- [x] End-turn button (players can end their own turn: `combat.nextTurn()` is permission-checked, guarded → toast on rejection).
+- [x] Hooks: `updateCombat`, `createCombat`, `deleteCombat`, `createCombatant`, `updateCombatant`, `deleteCombatant`.
+
+**Milestone:** ✅ combat tab shows live initiative and buzzes the player on their turn.
 
 ---
 
-## Phase 6 — Journals
+## Phase 6 — Journals → deferred to the end
 
-- [ ] List journals the player can see (`game.journal.filter(j => j.testUserPermission(game.user, "OBSERVER"))`), folders as collapsible groups.
-- [ ] Page viewer: journal entries are collections of pages (text/image/pdf). For text pages render `page.text.content` through `TextEditor.enrichHTML(..., { async: true })` so @UUID links, inline rolls, etc. resolve.
-- [ ] Handle content links: tapping an actor/item/journal link should open something sensible in your UI (start with: items open a simple item card, journal links navigate, everything else no-ops).
-- [ ] Image pages: pinch-zoomable image view (handouts, maps as images — cheap win).
-
-**Milestone:** player reads the campaign handouts on the phone comfortably.
+> **Moved to the bottom of this file (2026-06-12)** per the build-order note above. Journals is the lowest-priority remaining feature; the battle map (Phase 7) is built first. See **Phase 6 — Journals (deferred)** at the end of the roadmap for the full section.
 
 ---
 
@@ -180,6 +179,21 @@ Foundry's module list is world-level, so you can't disable a module per-client �
 - [ ] Guard everything with `game.modules.get(id)?.active` checks so missing modules never throw.
 
 **Milestone:** mobile client shows no 3D dice, no animation work in the profiler, and no foreign UI elements, while desktop clients are untouched.
+
+---
+
+## Phase 6 — Journals (deferred)
+
+> **Deferred to the end of the roadmap (2026-06-12)** — lowest-priority remaining feature; the battle map (Phase 7) is built first. Keeps the stable "Phase 6" identifier. Built after the battle map in the same work session.
+
+- [ ] List journals the player can see (`game.journal.filter(j => j.testUserPermission(game.user, "OBSERVER"))`), folders as collapsible groups.
+- [ ] Page viewer: journal entries are collections of pages (text/image/pdf). For text pages render `page.text.content` through `TextEditor.enrichHTML(..., { async: true })` so @UUID links, inline rolls, etc. resolve.
+- [ ] Handle content links: tapping an actor/item/journal link should open something sensible in your UI (start with: items open a simple item card, journal links navigate, everything else no-ops).
+- [ ] Image pages: pinch-zoomable image view (handouts, maps as images — cheap win).
+
+**Milestone:** player reads the campaign handouts on the phone comfortably.
+
+---
 
 ## Key reference notes
 
