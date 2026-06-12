@@ -1,8 +1,8 @@
 # Phase 4 — Actions Tab — Handoff (2026-06-12)
 
-Handoff for resuming Phase 4 in a new session. Everything below is committed to `main`; working tree clean; `dist/` gitignored. **137 tests green, `tsc --noEmit` clean, production `vite build` clean.**
+Handoff for resuming Phase 4 in a new session. Everything below is committed to `main`; working tree clean; `dist/` gitignored. **155 tests green, `tsc --noEmit` clean, production `vite build` clean.**
 
-> **Update 2026-06-12 (later):** Slice **A.2b** (attack modifier toggle) is now **code-complete on `main`** (`e9cab46` plan, `5c3d45a`/`3dbf027`/`69be1e8` code) with all automated checks green — but **live-verification is still pending** (see "What's next" → A.2b). Slice **B** is the active next step.
+> **Update 2026-06-12 (latest): Phase 4 is now CODE-COMPLETE on `main`.** Slice **A.2b** (attack modifier toggle) + **Slice B** (Actions list + Toggles bar) are built, plus **two live-bug fixes** (chat-card Crit `55d3e9e`; the A.2b toggle now applies post-clone `73f11a6`). A single **live-verification pass** is pending — the checklist is **`docs/reports/2026-06-12-phase-4-test-report.md`** (start there). Slice B plan: `docs/superpowers/plans/2026-06-12-phase-4-slice-b-actions-toggles.md`.
 
 ---
 
@@ -58,8 +58,8 @@ Pattern throughout: **pure sync mappers** read the live actor into serializable 
 
 **⚠️ Live-verify before declaring done** (needs Foundry + a martial actor with a runed weapon, Player1 @ mobile width): uncheck a potency rune → shown **Attack total drops** → Roll → the posted card's bonus reflects the **lowered** total; reopen the strike → checkboxes **all checked again** (no lingering `ignored`), a normal roll uses the **full** bonus; the homebrew **Imaginary Weapon**'s rule-element modifiers toggle/roll too.
 
-### 1. Slice B — Actions list + Toggles bar (specced)
-Spec: `docs/superpowers/specs/2026-06-12-phase-4-actions-tab-design.md` → "Slice B". Actions list from `actor.itemTypes.action` + feats with `actionCost`, grouped Encounter/Exploration/Downtime; Use → `item.toMessage()` (+ frequency decrement). Pinned **Toggles** strip from `actor.synthetics.toggles` → `actor.toggleRollOption(domain, option, itemId, value)`. Needs its own spec-detail pass → plan → implement. (PF2e API for these was researched earlier in the Phase 4 brainstorm — re-ground at build time.)
+### ✅ Slice B — Actions list + Toggles bar — DONE (code-complete on `main`; live-verification pending)
+Implemented per `docs/superpowers/plans/2026-06-12-phase-4-slice-b-actions-toggles.md` (`Phase 4 (Task 1..4)`). `buildActionsView` (`src/foundry/actor/actions.ts`) groups `actor.itemTypes.action` + feats w/ `actionCost` into Actions/Reactions/Free/Exploration/Downtime (mirrors `character/sheet.ts:400-464`); `useAction` (`actionUse.ts`) decrements `system.frequency.value` + `item.toMessage()`; `buildTogglesView`+`setToggle` (`toggles.ts`) flatten `actor.synthetics.toggles` (`placement==="actions"`) and flip via `actor.toggleRollOption(...)`. UI: pinned `ToggleBar` + `ActionsList` (Use + tap-name→`DetailModal`) in `ActionsTab`. Deferred: toggle suboptions, action selfEffect/crafting, kineticist blast de-dup, exploration active/other split. **Verify in the test report.**
 
 ### 2. Deferred backlog (not Phase 4 blockers)
 - **Apply-damage to a target token** → Phase 7 (no canvas token on mobile).
