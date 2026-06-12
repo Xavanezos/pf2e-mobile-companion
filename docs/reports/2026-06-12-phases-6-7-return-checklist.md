@@ -1,8 +1,10 @@
 # Phases 7 (battle map) + 6 (journals) — Return checklist
 
-**Date:** 2026-06-12 · **Branch:** `main` (all work committed) · **Tests:** 200 passing (41 files) · typecheck + prod build clean.
+**Date:** 2026-06-12 · **Branch:** `main` (all work committed) · **Tests:** 205 passing (42 files) · typecheck + prod build clean.
 
 You were away; this is what got done autonomously and exactly what to test (and likely fix) now that you're back. Read the **interpretation note** first — if I read your instruction wrong, that's the thing to correct before anything else.
+
+> **Follow-up after you returned (2026-06-12):** you reported the popup X not closing + asked for targeting. Both done — see **§7. Post-return: deselect fix + targeting** at the bottom. Both were live-verified in your running Foundry.
 
 ---
 
@@ -86,9 +88,35 @@ Have the GM **share a multi-page entry** (incl. a hidden page), an **image hando
 ## 6. Re-verify any time
 
 ```
-npm run test       # 200 passing (41 files)
+npm run test       # 205 passing (42 files)
 npm run typecheck  # clean
 npm run build      # clean prod build → dist/
 ```
 
 The dev server (vite :30001, proxying Foundry :30000) is running; a built `dist/` is current. Reload Foundry on a phone-width window (or set the module's "Mobile UI mode" to **Always on**) to see the tabs. The new tabs are **Map** (battle map + macro bar) and **Journal**.
+
+---
+
+## 7. Post-return: deselect fix + targeting (2026-06-12)
+
+Both shipped on `main` and **live-verified in your running Foundry** (Player1, mobile width).
+
+### Fixed — token info popup wouldn't close ("pressing X doesn't deselect")
+**Root cause:** the popup was rendered *inside* the map viewport, whose `pointerdown` handler calls `setPointerCapture` — which redirected the `pointerup`, so the X (and backdrop tap) never produced a `click`. **Fix:** the popup (and the new targets chip) are now siblings of the viewport, not children. Verified live: tap a token → popup opens → tap **X** → it closes.
+
+### New — target tokens + multi-target (full no-canvas integration)
+Foundry's targeting is canvas-coupled and `setTarget` no-ops with `noCanvas`. I researched the v14.364 source and drove the two **canvas-free** primitives directly:
+- **`game.user.targets.add(standIn)`** — a stand-in carrying `.id/.document/.actor` but **no `.object`**, so **strikes/spells you roll from the phone resolve vs the target's AC** (PF2e reads only actor data; all geometry is guarded on the absent `.object`).
+- **`game.user.broadcastActivity({ sceneId, targets })`** — so the **GM's canvas draws the reticles**. The `sceneId` is mandatory (without it the GM clears your targets).
+
+**How to use it:** tap a token → the info popup has a **Target / Untarget** button. Targeted tokens show a **red reticle**; a **"N targets ✕" chip** at the top clears all. Tap several tokens to multi-target (each toggle adds/removes).
+
+**Live-verified by me:** `game.user.targets` populates with the correct stand-in (`hasDoc:true, hasActor:true, hasObject:false`); the broadcast carries `{sceneId, targets}`; reticles render; multi-target → "2 targets" chip; clear empties everything (local + broadcast). Files: `src/foundry/scene/targeting.ts` (+ `tests/targeting.test.ts`), `targeted` flag through `scene/{types,view}.ts` + `useScene` (re-preps on the `targetToken` hook), reticle in `TokenSprite`, button in `TokenInfoPopup`, chip in `BattleMap`.
+
+**Still confirm in real play (needs a GM watching + an actual roll):**
+- [ ] When you target from the phone, the **GM's canvas shows the reticle** on that token (I verified the broadcast is *sent* correctly with the sceneId handshake; the GM-side render is Foundry's stock path).
+- [ ] **Roll a strike/spell from the phone with a target set** → the chat card shows **"vs AC N"** / Hit-Miss against that target. (The `game.user.targets` integration is verified populated; this confirms PF2e consumes it at roll time as the research found.)
+- [ ] **NPC AC visibility:** the AC number only shows if the target **has a player owner** OR the world's **"Show DCs"** metagame setting is on — otherwise PF2e renders a hidden DC. Not a bug; note which your table uses.
+- [ ] Multi-target with a multi-target spell (e.g. a save-based AoE) applies to all targets as expected.
+
+**Deferred polish (noted, not built):** long-press a token to quick-target without opening the popup (faster multi-target); a per-token "is targeted by N players" indicator. The current tap→popup→Target flow covers single + multi.
