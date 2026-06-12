@@ -1,14 +1,20 @@
 import { useEffect, useRef } from "react";
 import { renderMessageElement } from "../../foundry/chat/render";
 import { classifyCardClick, type CardInteraction } from "../../foundry/chat/cardInteractions";
+import { useLongPress } from "../sheet/parts/useLongPress";
 import type { ChatView } from "../../foundry/chat/types";
 
 /** Mounts the live PF2e card element for one message; falls back to the summary
  *  title if the message is gone or won't render. A capture-phase click listener
  *  intercepts the damage/save/effect controls (whose native handlers are dead on
  *  mobile) and reports them via `onInteract`. */
-export function ChatCard({ summary, onInteract }: { summary: ChatView; onInteract?: (i: CardInteraction) => void }) {
+export function ChatCard({ summary, onInteract, onLongPress }: {
+  summary: ChatView;
+  onInteract?: (i: CardInteraction) => void;
+  onLongPress?: (messageId: string) => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
+  const press = useLongPress(() => onLongPress?.(summary.id));
   useEffect(() => {
     let alive = true;
     const host = ref.current;
@@ -34,5 +40,12 @@ export function ChatCard({ summary, onInteract }: { summary: ChatView; onInterac
       host?.replaceChildren();
     };
   }, [summary.id, summary.title, onInteract]);
-  return <div ref={ref} className="pf2e-chat-card" />;
+  return (
+    <div
+      ref={ref}
+      {...press}
+      className="pf2e-chat-card select-none"
+      style={{ touchAction: "manipulation", WebkitTouchCallout: "none" }}
+    />
+  );
 }

@@ -8,6 +8,9 @@ import { SpellEffectModal } from "../chat/SpellEffectModal";
 import { StrikeDamageModal } from "../actions/StrikeDamageModal";
 import { rollAttackCardDamage, previewAttackCardDamage, attackCardLabel } from "../../foundry/actor/strikeChatActions";
 import { isNearBottom } from "../chat/scroll";
+import { ChatMessageActionsModal } from "../chat/ChatMessageActionsModal";
+import { messageActions, type ChatMessageAction } from "../../foundry/chat/messageActions";
+import { readMessageActionSource } from "../../foundry/chat/messageActionsRun";
 import type { CardInteraction } from "../../foundry/chat/cardInteractions";
 
 /** The Chat tab: full scrollable history, newest at the bottom, auto-scrolled.
@@ -16,6 +19,7 @@ export function ChatTab() {
   const messages = useChatStore((s) => s.messages);
   const actorId = useAppStore((s) => s.actorId);
   const [popup, setPopup] = useState<CardInteraction | null>(null);
+  const [actionsTarget, setActionsTarget] = useState<{ id: string; title: string; actions: ChatMessageAction[] } | null>(null);
   const list = useRef<HTMLDivElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
   // Stay pinned to the newest message until the user scrolls up to read history.
@@ -54,9 +58,16 @@ export function ChatTab() {
     );
   }
   const close = () => setPopup(null);
+  const openActions = (id: string) => {
+    const src = readMessageActionSource(id);
+    const acts = src ? messageActions(src) : [];
+    if (!acts.length) return; // nothing applicable → don't open an empty sheet
+    const title = messages.find((m) => m.id === id)?.title ?? "Message";
+    setActionsTarget({ id, title, actions: acts });
+  };
   return (
     <div ref={list} className="flex flex-col gap-2 p-3">
-      {messages.map((m) => <ChatCard key={m.id} summary={m} onInteract={setPopup} />)}
+      {messages.map((m) => <ChatCard key={m.id} summary={m} onInteract={setPopup} onLongPress={openActions} />)}
       <div ref={bottom} />
       {popup?.kind === "damage" && <DamageRollModal messageId={popup.messageId} onClose={close} />}
       {popup?.kind === "save" && actorId && (
@@ -72,6 +83,14 @@ export function ChatTab() {
           loadFormula={() => previewAttackCardDamage(popup.messageId, { critical: popup.critical })}
           onRoll={() => void rollAttackCardDamage(popup.messageId, { critical: popup.critical })}
           onClose={close}
+        />
+      )}
+      {actionsTarget && (
+        <ChatMessageActionsModal
+          messageId={actionsTarget.id}
+          title={actionsTarget.title}
+          actions={actionsTarget.actions}
+          onClose={() => setActionsTarget(null)}
         />
       )}
     </div>
