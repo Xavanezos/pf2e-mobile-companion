@@ -19,3 +19,11 @@ export function detectMobile({ ua, width, override }: DetectMobileInput): boolea
   if (override === "off") return false;
   return isMobileUA(ua) || width <= WIDTH_BREAKPOINT;
 }
+
+export type MapRenderer = "canvas" | "lite";
+
+/** Pure: the `core.noCanvas` value a given Map renderer needs. The canvas map
+ *  needs the canvas ON (noCanvas false); the lite DOM map needs it OFF (true). */
+export function desiredNoCanvas(renderer: MapRenderer): boolean {
+  return renderer === "lite";
+}
