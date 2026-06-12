@@ -15,7 +15,7 @@
 ## Decisions (approved)
 
 1. **Mobile popups, PF2e does the math.** Keep the real PF2e card for display; intercept its Roll Damage / Save / effect controls and open a touch-friendly popup that calls PF2e's own roll/apply methods. We never reproduce damage formulas, heightening, save degrees, or effect application.
-2. **Damage popup = Damage + Critical, with the formula.** Two buttons (normal / critical); shows the spell's damage formula; result posts through the existing chat feed.
+2. **Damage popup = a single Roll Damage button, showing the spell's base damage.** PF2e v8.2 spells expose only one damage roll (`data-action="spell-damage"`, outcome hardcoded) — there is no separate critical-damage roll like weapon strikes. Critical *doubling* is an apply-time concept tied to a selected token, deferred to Phase 7. Result posts through the existing chat feed. *(Revised from an initial "Damage + Critical" after grounding against the v8.2 source.)*
 3. **Save = confirm popup, then roll.** Popup shows save type + DC, a Roll button, and normal / fortune / misfortune. **Roller is always the app's bound character** (sidesteps mobile's absent canvas-token selection).
 4. **Spell effect popup in both places** — the chat card's effect link and the `SpellDetailModal`. Apply adds the PF2e effect item to the bound character.
 
@@ -47,7 +47,7 @@ ChatCard — capturing click listener on the host
    ▼
 onInteract(payload)  →  ChatTab holds the active-popup state, renders one modal
    │
-   ├─ DamageRollModal  → rollSpellDamage(messageId, { critical })       ┐
+   ├─ DamageRollModal  → rollSpellDamage(messageId)                     ┐
    ├─ SaveRollModal    → rollSpellSave(actorId, saveType, dc, { mode }) │  [src/foundry/spells/
    └─ SpellEffectModal → applySpellEffect(actorId, uuid)                ┘   chatActions.ts — guarded]
                                    │  each calls a live PF2e method
@@ -80,10 +80,10 @@ This item is pure styling — no logic, no new tests; verified by eye on the liv
 ## Item 2 — Roll Damage / Roll Save
 
 ### Damage popup (`DamageRollModal`)
-- **Trigger:** tap the card's damage control → `classifyCardClick` returns `{kind:'damage'}` (payload carries `messageId`).
-- **Contents:** the spell name + its **damage formula** (read from the cast spell on the message), and two buttons: **Roll Damage** and **Roll Critical**.
-- **Execute:** `rollSpellDamage(messageId, { critical })` resolves the cast spell from the message and calls PF2e's spell-damage roll (normal vs. critical). PF2e posts the damage card → appears in the feed → modal closes.
-- **No heighten/variant UI** (decision 2) — the spell on the message is already at its cast rank, so damage heightens correctly without extra controls.
+- **Trigger:** tap the card's damage control (`button[data-action="spell-damage"]`) → `classifyCardClick` returns `{kind:'damage'}` (payload carries `messageId`).
+- **Contents:** the spell name + its **base damage** (the dice from the cast spell's `system.damage`), and a single **Roll Damage** button.
+- **Execute:** `rollSpellDamage(messageId)` resolves the cast spell via `message.item` (already the heightened variant at cast rank — `chat-message/document.ts:104`) and calls `spell.rollDamage(event)` (`item/spell/document.ts:964`). PF2e posts the damage card → appears in the feed → modal closes.
+- **No critical / heighten / variant UI** — PF2e v8.2 spells have a single damage roll (outcome hardcoded); the spell on the message is already at cast rank, so damage heightens correctly. Critical doubling is deferred to Phase 7 (apply-to-token).
 
 ### Save popup (`SaveRollModal`)
 - **Trigger:** tap the card's save control → `classifyCardClick` returns `{kind:'save', saveType, dc}`. `saveType` (e.g. `reflex`) and `dc` are read from the tapped element's dataset; if absent, fall back to the spell's defense save + the casting DC from the message.
@@ -130,12 +130,12 @@ No changes to the cast path (`cast.ts`) or the chat feed (`useChatFeed`/`render.
 
 ---
 
-## Live-API assumptions (verify against the running Foundry; correct any path on contact)
+## Live-API paths (grounded against the v8.2 clone; spot-check on the running Foundry)
 
-PF2e v8.2 / Foundry v14 is newer than the assistant's training data — **inspect the live cast card before wiring each handler.**
+These were confirmed against the local PF2e **v8.2.0** source clone (`E:/React Projects/pf2e`) with `file:line` references during planning (see the implementation plan for the exact refs). The running instance should match; still **spot-check the rendered card's DOM** (enriched link class, button datasets) since those only exist at runtime.
 
 1. **Spell on the message** — the cast `ChatMessage` exposes the cast spell (at its cast rank) via `message.item` (or equivalent). Needed by `rollSpellDamage` and as the damage-formula source.
-2. **Spell damage roll** — the method + signature for rolling a spell's damage, and how **critical** is requested (e.g. `spell.rollDamage({ … })` with an outcome/critical flag). The popup's two buttons map to normal vs. critical.
+2. **Spell damage roll** — confirmed: `message.item` returns the heightened spell at cast rank (`chat-message/document.ts:104`); `spell.rollDamage(event)` rolls + posts (`item/spell/document.ts:964`). Single button (`data-action="spell-damage"`), no critical param. Attack spells read a target from `game.user.targets` (absent on mobile → rolls untargeted); save/AoE damage needs no target.
 3. **Damage control selector** — the cast card's damage button (`data-action` value / class) that `classifyCardClick` matches.
 4. **Save control + dataset** — the cast card's save element and the keys carrying save type + DC (e.g. `data-pf2-check`, `data-pf2-dc` on an inline check); plus the fallback (spell defense save + message casting DC).
 5. **Save roll for a chosen actor** — `actor.saves[saveType].roll({ dc, rollMode, … })`, and how **fortune / misfortune** is expressed (e.g. `rollTwice: "keep-higher" | "keep-lower"`).
@@ -154,7 +154,7 @@ PF2e v8.2 / Foundry v14 is newer than the assistant's training data — **inspec
 - **Typecheck + build:** `npm run typecheck` && `npm run build` green.
 - **Manual live checklist (Ezren, as the owning player):**
   - [ ] Spells list — names flush-left, Cast on the right; same in Activations and the Spellbook modal.
-  - [ ] Cast a damaging spell → tap **Roll Damage** → damage card posts to Chat. Tap **Roll Critical** → doubled/crit damage posts.
+  - [ ] Cast a damaging (save) spell → tap **Roll Damage** → popup shows base damage → Roll → PF2e's damage card posts to Chat.
   - [ ] Cast a save spell → tap the **save** → popup shows type + DC → **Roll** → the character's save result posts. Try fortune/misfortune.
   - [ ] A spell with an effect → tap the card's **effect link** → popup shows the description → **Apply** → the effect appears on the character.
   - [ ] Same effect popup reachable from **Spells → tap spell → detail → Apply Effect**.
