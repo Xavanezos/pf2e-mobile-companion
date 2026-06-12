@@ -87,4 +87,52 @@ describe("buildSceneView", () => {
     expect(v.tokens).toEqual([]);
     expect(v.hasScene).toBe(true);
   });
+
+  it("maps active conditions (with value) and effects (with badge) onto the token", () => {
+    const t = token({
+      actor: {
+        id: "a1", hasPlayerOwner: false,
+        conditions: { active: [{ slug: "frightened", name: "Frightened", value: 2, img: "fr.webp", isLocked: false }] },
+        itemTypes: { effect: [{ id: "e1", name: "Bless", img: "bl.webp", badge: { value: 1 } }] },
+      },
+    });
+    const v = buildSceneView(scene([t]), DIMS, GM);
+    expect(v.tokens[0].conditions).toEqual([
+      { slug: "frightened", name: "Frightened", value: 2, img: "fr.webp", locked: false },
+    ]);
+    expect(v.tokens[0].effects).toEqual([{ id: "e1", name: "Bless", img: "bl.webp", badge: "1" }]);
+  });
+
+  it("shows conditions/effects on an NPC token for a player (no owner gating, unlike HP)", () => {
+    const npc = token({
+      id: "npc",
+      actor: {
+        id: "x", hasPlayerOwner: false,
+        system: { attributes: { hp: { value: 8, max: 8 } } },
+        conditions: { active: [{ slug: "prone", name: "Prone", value: null }] },
+        itemTypes: { effect: [] },
+      },
+    });
+    const pv = buildSceneView(scene([npc]), DIMS, PLAYER);
+    expect(pv.tokens[0].hp).toBeNull();                                   // HP still gated
+    expect(pv.tokens[0].conditions.map((c) => c.slug)).toEqual(["prone"]); // conditions are not
+  });
+
+  it("defaults conditions/effects to empty arrays when the actor omits them", () => {
+    const v = buildSceneView(scene([token({ actor: { id: "a1", hasPlayerOwner: true } })]), DIMS, GM);
+    expect(v.tokens[0].conditions).toEqual([]);
+    expect(v.tokens[0].effects).toEqual([]);
+  });
+
+  it("masks an unidentified effect for a non-GM non-owner, but not for the GM or owner", () => {
+    const eff = { id: "e", name: "Secret Buff", img: "s.webp", badge: { value: 3 }, unidentified: true };
+    const npc = (isOwner: boolean) =>
+      token({ actor: { id: "x", hasPlayerOwner: false, isOwner, itemTypes: { effect: [eff] } } });
+    expect(buildSceneView(scene([npc(false)]), DIMS, PLAYER).tokens[0].effects[0])
+      .toEqual({ id: "e", name: "Effect", img: "s.webp", badge: null });
+    expect(buildSceneView(scene([npc(false)]), DIMS, GM).tokens[0].effects[0])
+      .toMatchObject({ name: "Secret Buff", badge: "3" });
+    expect(buildSceneView(scene([npc(true)]), DIMS, PLAYER).tokens[0].effects[0])
+      .toMatchObject({ name: "Secret Buff", badge: "3" });
+  });
 });

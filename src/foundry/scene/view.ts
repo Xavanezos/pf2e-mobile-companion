@@ -1,6 +1,8 @@
 import type {
   SceneDimensionsLike, SceneLike, SceneView, SceneViewContext, TokenLike, TokenView,
 } from "./types";
+import type { ConditionView, EffectView, ConditionLike, EffectLike } from "../actor/types";
+import { effectBadgeLabel } from "../actor/view";
 
 /** Pure: build the player-facing battle-map view from the live active scene.
  *  Owns every visibility rule (GM-hidden + PF2e-secret tokens omitted for
@@ -28,6 +30,9 @@ export function buildSceneView(
         ? { value: hpRaw.value, max: hpRaw.max }
         : null;
     const canSeeName = ctx.isGM || t.playersCanSeeName === true;
+    const canIdentifyEffects = ctx.isGM || t.actor?.isOwner === true;
+    const conditions = mapTokenConditions(t.actor?.conditions?.active ?? []);
+    const effects = mapTokenEffects(t.actor?.itemTypes?.effect ?? [], canIdentifyEffects);
 
     tokens.push({
       id: t.id,
@@ -43,8 +48,33 @@ export function buildSceneView(
       hidden: t.hidden,
       disposition: t.disposition ?? 0,
       hp,
+      conditions,
+      effects,
     });
   }
 
   return { id: scene.id, background: scene.background?.src ?? null, grid: scene.grid ?? null, dims, tokens, hasScene: true };
+}
+
+/** Map a token actor's active conditions to the shared ConditionView shape
+ *  (mirrors the character sheet's mapConditions). */
+function mapTokenConditions(active: ConditionLike[]): ConditionView[] {
+  return active.map((c) => ({
+    slug: c.slug, name: c.name, value: c.value, img: c.img, locked: c.isLocked ?? false,
+  }));
+}
+
+/** Map a token actor's effects to the shared EffectView shape. An effect flagged
+ *  `unidentified` is shown as a neutral "Effect" (no badge) unless the viewer can
+ *  identify it (GM or the actor's owner), so its real name never leaks on the map. */
+function mapTokenEffects(effects: EffectLike[], canIdentify: boolean): EffectView[] {
+  return effects.map((e) => {
+    const masked = e.unidentified === true && !canIdentify;
+    return {
+      id: e.id,
+      name: masked ? "Effect" : e.name,
+      img: e.img,
+      badge: masked ? null : effectBadgeLabel(e.badge),
+    };
+  });
 }

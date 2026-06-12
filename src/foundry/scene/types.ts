@@ -1,6 +1,8 @@
 // Type contract for the lightweight battle map: the view the renderer draws,
 // plus the structural shapes of the live Scene + Token documents the mapper reads.
 
+import type { ConditionView, EffectView, ConditionLike, EffectLike } from "../actor/types";
+
 /** Scene→pixel geometry (a structural subset of Foundry's SceneDimensions).
  *  Computed canvas-free by Scene#prepareBaseData; passed into the pure mapper. */
 export interface SceneDimensionsLike {
@@ -28,6 +30,8 @@ export interface TokenView {
   hidden: boolean;               // GM-hidden (only listed for the GM; rendered dimmed)
   disposition: number;           // CONST.TOKEN_DISPOSITIONS (-2 secret … 1 friendly)
   hp: { value: number; max: number } | null; // null when the viewer may not see it
+  conditions: ConditionView[];   // active PF2e conditions (frightened, prone, …)
+  effects: EffectView[];         // active PF2e effects (spell buffs, …)
 }
 
 /** What the Map tab renders. */
@@ -66,7 +70,10 @@ export interface TokenLike {
   actor?: {
     id: string;
     hasPlayerOwner?: boolean;
+    isOwner?: boolean;             // current viewer owns this actor (un-masks unidentified effects)
     system?: { attributes?: { hp?: { value?: number; max?: number } } };
+    conditions?: { active: ConditionLike[] };
+    itemTypes?: { effect: EffectLike[] };
   } | null;
 }
 

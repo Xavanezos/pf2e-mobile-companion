@@ -126,7 +126,7 @@ export interface IwrLike { label: string; value?: number; }
 export interface ModifierLike { label: string; modifier: number; enabled?: boolean; type?: string; }
 export interface SkillLike { slug: string; label: string; mod: number; rank: number; armor: boolean; lore?: boolean; modifiers?: ModifierLike[]; check?: { modifiers?: ModifierLike[] }; }
 export interface ConditionLike { slug: string; name: string; value: number | null; img?: string; isLocked?: boolean; }
-export interface EffectLike { id?: string; name: string; img?: string; badge?: { value?: number; label?: string } | null; }
+export interface EffectLike { id?: string; name: string; img?: string; badge?: { value?: number; label?: string } | null; unidentified?: boolean; }
 
 /** Live item read on demand for the detail popup (#3): feat | physical item | effect. */
 export interface ItemDetailLike {
