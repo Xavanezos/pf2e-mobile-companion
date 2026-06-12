@@ -1,0 +1,75 @@
+// Type contract for the lightweight battle map: the view the renderer draws,
+// plus the structural shapes of the live Scene + Token documents the mapper reads.
+
+/** Scene→pixel geometry (a structural subset of Foundry's SceneDimensions).
+ *  Computed canvas-free by Scene#prepareBaseData; passed into the pure mapper. */
+export interface SceneDimensionsLike {
+  width: number;        // full padded canvas width, px
+  height: number;       // full padded canvas height, px
+  size: number;         // px per grid square
+  sceneX: number;       // background image left within the padded canvas
+  sceneY: number;       // background image top
+  sceneWidth: number;   // background image width, px
+  sceneHeight: number;  // background image height, px
+}
+
+/** One token, ready to position over the background. */
+export interface TokenView {
+  id: string;
+  name: string;                  // "" when the player may not see it (no nameplate)
+  img: string | null;
+  left: number;
+  top: number;                   // scene px (padded-canvas space) = token.x / token.y
+  width: number;
+  height: number;                // px (grid units × size)
+  isMine: boolean;               // active character owns the actor → draggable
+  isCurrent: boolean;            // current combatant's token → turn ring
+  hidden: boolean;               // GM-hidden (only listed for the GM; rendered dimmed)
+  disposition: number;           // CONST.TOKEN_DISPOSITIONS (-2 secret … 1 friendly)
+  hp: { value: number; max: number } | null; // null when the viewer may not see it
+}
+
+/** What the Map tab renders. */
+export interface SceneView {
+  background: string | null;     // scene.background.src
+  dims: SceneDimensionsLike;
+  tokens: TokenView[];
+  hasScene: true;
+}
+
+/** Viewer context the mapper needs to apply visibility rules. */
+export interface SceneViewContext {
+  isGM: boolean;
+  characterActorId: string | null;
+  currentTokenId: string | null; // game.combat?.combatant?.tokenId on this scene
+}
+
+// ---------- Source (the live documents, structurally) ----------
+
+/** A live TokenDocumentPF2e — only the fields the mapper reads. */
+export interface TokenLike {
+  id: string;
+  name: string;
+  x: number;
+  y: number;                     // top-left, padded-canvas px
+  width: number;
+  height: number;                // grid units
+  hidden: boolean;
+  disposition?: number;
+  isSecret?: boolean;            // PF2e getter: SECRET disposition the viewer can't reveal
+  playersCanSeeName?: boolean;   // PF2e getter
+  texture?: { src?: string | null } | null;
+  actor?: {
+    id: string;
+    hasPlayerOwner?: boolean;
+    system?: { attributes?: { hp?: { value?: number; max?: number } } };
+  } | null;
+}
+
+/** The live ScenePF2e — only the fields the mapper reads. `tokens` is accepted as
+ *  a plain array or a Foundry EmbeddedCollection ({ contents }). */
+export interface SceneLike {
+  id: string;
+  background?: { src?: string | null } | null;
+  tokens: TokenLike[] | { contents: TokenLike[] };
+}
