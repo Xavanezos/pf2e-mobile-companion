@@ -1,6 +1,8 @@
 # Phase 4 — Actions Tab — Handoff (2026-06-12)
 
-Handoff for resuming Phase 4 in a new session. Everything below is committed to `main`; working tree clean; `dist/` gitignored. **132 tests green, `tsc --noEmit` clean, production `vite build` clean.**
+Handoff for resuming Phase 4 in a new session. Everything below is committed to `main`; working tree clean; `dist/` gitignored. **137 tests green, `tsc --noEmit` clean, production `vite build` clean.**
+
+> **Update 2026-06-12 (later):** Slice **A.2b** (attack modifier toggle) is now **code-complete on `main`** (`e9cab46` plan, `5c3d45a`/`3dbf027`/`69be1e8` code) with all automated checks green — but **live-verification is still pending** (see "What's next" → A.2b). Slice **B** is the active next step.
 
 ---
 
@@ -49,17 +51,17 @@ Pattern throughout: **pure sync mappers** read the live actor into serializable 
 
 ## What's next (in order)
 
-### 1. Slice A.2b — attack modifier toggle (specced, NO plan yet)
-Make `StrikeAttackModal`'s modifiers **togglable** (PF2e-style — disable e.g. a potency rune before rolling). Spec: `docs/superpowers/specs/2026-06-12-phase-4-strike-interactions-design.md` → "Slice A.2b".
+### ✅ Slice A.2b — attack modifier toggle — CODE-COMPLETE on `main` (live-verification PENDING)
+`StrikeAttackModal` now renders a checkbox per modifier; unchecking re-previews the total via `previewStrikeAttack(actorId, strikeIndex, variantIndex, disabledSlugs)` and the disabled slugs ride along to `rollStrikeAttack(.., { disabledSlugs })`. Plan: `docs/superpowers/plans/2026-06-12-phase-4-slice-a2b-attack-modifier-toggle.md`. Commits `e9cab46`(plan)/`5c3d45a`(preview)/`3dbf027`(roll)/`69be1e8`(modal+tab).
 
-**Grounded mechanism** (verify live — this is the highest-risk, PF2e-internal piece): set `modifier.ignored = true` on the live strike's matching modifiers (by `slug`) + call `strike.calculateTotal()`, then `variant.roll()` (it clones the strike's modifiers at roll time, so it honors `ignored`); **restore** the prior `ignored` in a `finally`. Refs: `pf2e/src/module/actor/modifiers.ts:129,605-618`; dialog precedent `system/check/dialog.ts:127-134`; clone-at-roll `actor/character/helpers.ts:560-625`.
+**Mechanism — VERIFIED against the cloned PF2e source** (the spec's `helpers.ts:560-625` ref was stale; corrected): set `modifier.ignored = true` on the matching live modifiers (by `slug`) → `strike.calculateTotal()` (`applyStackingRules` forces ignored→`enabled=false`, `modifiers.ts:489-494, 606-618`); `variant.roll()` builds `new CheckModifier("strike", action, …)` (`character/document.ts:1559`) whose ctor clones `action.modifiers` **at roll time** (`modifiers.ts:650-658`; `Modifier.clone()` spreads `{...this}`, preserving `ignored`, `:278`) so the roll honors it; **restore `.ignored` in a `finally`** — transient/self-healing. Dialog precedent `system/check/dialog.ts:130-131`.
 
-**Work:** add `previewStrikeAttack(actorId, strikeIndex, variantIndex, disabledSlugs)` (transient apply→recompute→read→restore, returns `{total, parts}`) + a `disabledSlugs` param on `rollStrikeAttack` (apply→roll→restore in `finally`) in `strikeActions.ts`; add checkboxes to `StrikeAttackModal` that re-preview on toggle. **Resume by:** brainstorming is already done → go straight to `writing-plans` for A.2b, then `executing-plans`.
+**⚠️ Live-verify before declaring done** (needs Foundry + a martial actor with a runed weapon, Player1 @ mobile width): uncheck a potency rune → shown **Attack total drops** → Roll → the posted card's bonus reflects the **lowered** total; reopen the strike → checkboxes **all checked again** (no lingering `ignored`), a normal roll uses the **full** bonus; the homebrew **Imaginary Weapon**'s rule-element modifiers toggle/roll too.
 
-### 2. Slice B — Actions list + Toggles bar (specced)
+### 1. Slice B — Actions list + Toggles bar (specced)
 Spec: `docs/superpowers/specs/2026-06-12-phase-4-actions-tab-design.md` → "Slice B". Actions list from `actor.itemTypes.action` + feats with `actionCost`, grouped Encounter/Exploration/Downtime; Use → `item.toMessage()` (+ frequency decrement). Pinned **Toggles** strip from `actor.synthetics.toggles` → `actor.toggleRollOption(domain, option, itemId, value)`. Needs its own spec-detail pass → plan → implement. (PF2e API for these was researched earlier in the Phase 4 brainstorm — re-ground at build time.)
 
-### 3. Deferred backlog (not Phase 4 blockers)
+### 2. Deferred backlog (not Phase 4 blockers)
 - **Apply-damage to a target token** → Phase 7 (no canvas token on mobile).
 - **Modular/versatile damage-type selectors** on strikes.
 - **Repeating/magazine ranged weapons** — A.2c targets the common select-ammo path; the loaded-magazine model is unverified.
