@@ -28,7 +28,15 @@ export function useScene(actorId: string | null): SceneView | null {
     const c = (game as any)?.combat?.combatant;
     const currentTokenId =
       c && c.sceneId === scene.id ? (c.tokenId ?? c.token?.id ?? null) : null;
-    return buildSceneView(scene, scene.dimensions, { isGM, characterActorId: actorId, currentTokenId });
+    // Read the background from `_source` to avoid Foundry v14's deprecated
+    // `Scene#background` getter (which warns on every render); the value is the
+    // same. Tokens stay the live collection (the mapper handles `{ contents }`).
+    const sceneArg = {
+      id: scene.id,
+      background: { src: scene._source?.background?.src ?? scene.background?.src ?? null },
+      tokens: scene.tokens,
+    };
+    return buildSceneView(sceneArg, scene.dimensions, { isGM, characterActorId: actorId, currentTokenId });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version, actorId]);
 }
