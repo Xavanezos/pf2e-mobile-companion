@@ -1,5 +1,5 @@
 // src/app/map/CanvasMap.tsx
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
 import { useAppStore } from "../store";
 import { useScene } from "./useScene";
@@ -8,6 +8,9 @@ import { useCanvasLifecycle } from "./useCanvasLifecycle";
 import { panForDrag, panForFocalZoom, clampScale } from "../../foundry/canvas/view";
 import { tokenIdAtScreenPoint } from "../../foundry/canvas/hitTest";
 import { moveToken } from "../../foundry/scene/actions";
+import { clearTargets } from "../../foundry/scene/targeting";
+import { snapToCenter, measureDistance, type GridSpec, type Point } from "../../foundry/scene/ruler";
+import { useFoundryHook } from "../useFoundryHook";
 
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 4;
@@ -35,6 +38,14 @@ function worldAt(clientX: number, clientY: number): { x: number; y: number } | n
   const P = (globalThis as any).PIXI?.Point;
   const local = cv.stage.toLocal(P ? new P(clientX, clientY) : { x: clientX, y: clientY });
   return { x: local.x, y: local.y };
+}
+/** World (scene px) → screen (client px) via the stage transform; null if off. */
+function screenAt(worldX: number, worldY: number): { x: number; y: number } | null {
+  const cv = liveCanvas();
+  if (!cv?.ready) return null;
+  const P = (globalThis as any).PIXI?.Point;
+  const g = cv.stage.toGlobal(P ? new P(worldX, worldY) : { x: worldX, y: worldY });
+  return { x: g.x, y: g.y };
 }
 
 interface PressState {
@@ -65,6 +76,28 @@ export function CanvasMap() {
   const pressRef = useRef<PressState | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const [infoId, setInfoId] = useState<string | null>(null);
+  const [rulerMode, setRulerMode] = useState(false);
+  const rulerModeRef = useRef(false);
+  const [rulerLine, setRulerLine] = useState<{ a: Point; b: Point } | null>(null);
+  const rulerRef = useRef<{ pointerId: number; a: Point; b: Point } | null>(null);
+  // Bump on canvas pan so the screen-space ruler overlay re-projects with the view.
+  const [, setPanTick] = useState(0);
+  const onCanvasPan = useCallback(() => setPanTick((n) => n + 1), []);
+  useFoundryHook("canvasPan", onCanvasPan);
+
+  const gridSpec = (): GridSpec => {
+    const cv = liveCanvas();
+    const grid = cv?.scene?.grid;
+    return { size: grid?.size ?? 100, distance: grid?.distance ?? 5, square: (grid?.type ?? 1) === 1 };
+  };
+  const toggleRuler = () => {
+    const next = !rulerModeRef.current;
+    rulerModeRef.current = next;
+    setRulerMode(next);
+    rulerRef.current = null;
+    setRulerLine(null);
+    if (next) setInfoId(null);
+  };
 
   const localPoint = (e: ReactPointerEvent) => {
     const r = viewportRef.current!.getBoundingClientRect();
@@ -83,6 +116,16 @@ export function CanvasMap() {
   };
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (rulerModeRef.current) {
+      const w = worldAt(e.clientX, e.clientY);
+      if (w) {
+        const p = snapToCenter(gridSpec(), w.x, w.y);
+        rulerRef.current = { pointerId: e.pointerId, a: p, b: p };
+        setRulerLine({ a: p, b: p });
+        viewportRef.current?.setPointerCapture(e.pointerId);
+      }
+      return;
+    }
     // While a token drag is in progress, ignore any additional pointers so a
     // second finger can't overwrite the press/anchor state mid-drag.
     if (dragRef.current) return;
@@ -111,6 +154,12 @@ export function CanvasMap() {
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     const pan = readPan();
     if (!pan) return;
+    const r = rulerRef.current;
+    if (r && r.pointerId === e.pointerId) {
+      const w = worldAt(e.clientX, e.clientY);
+      if (w) { r.b = snapToCenter(gridSpec(), w.x, w.y); setRulerLine({ a: r.a, b: r.b }); }
+      return;
+    }
     const d = dragRef.current;
     if (d && d.pointerId === e.pointerId) {
       const pr2 = pressRef.current;
@@ -139,6 +188,10 @@ export function CanvasMap() {
   };
 
   const endPointer = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (rulerRef.current && rulerRef.current.pointerId === e.pointerId) {
+      rulerRef.current = null; // leave the measured line on screen
+      return;
+    }
     const d = dragRef.current;
     if (d && d.pointerId === e.pointerId) {
       const moved = pressRef.current?.moved;
@@ -169,11 +222,13 @@ export function CanvasMap() {
   };
 
   const infoToken = infoId && view ? view.tokens.find((tk) => tk.id === infoId) ?? null : null;
+  const targetCount = view ? view.tokens.filter((tk) => tk.targeted).length : 0;
+  const aScreen = rulerLine ? screenAt(rulerLine.a.x, rulerLine.a.y) : null;
+  const bScreen = rulerLine ? screenAt(rulerLine.b.x, rulerLine.b.y) : null;
+  const rulerMeas = rulerLine ? measureDistance(gridSpec(), rulerLine.a, rulerLine.b) : null;
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      {/* Transparent input layer over #board: captures all touches (so Foundry's
-          native canvas interaction never competes) and drives canvas.pan. */}
       <div
         ref={viewportRef}
         className="absolute inset-0 touch-none"
@@ -183,6 +238,39 @@ export function CanvasMap() {
         onPointerCancel={endPointer}
         onWheel={onWheel}
       />
+      {aScreen && bScreen && (
+        <svg className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
+          <line x1={aScreen.x} y1={aScreen.y} x2={bScreen.x} y2={bScreen.y} stroke="#fbbf24" strokeWidth={3} strokeLinecap="round" />
+          <circle cx={aScreen.x} cy={aScreen.y} r={5} fill="#fbbf24" />
+          <circle cx={bScreen.x} cy={bScreen.y} r={5} fill="#fbbf24" />
+        </svg>
+      )}
+      {bScreen && rulerMeas && (
+        <div
+          className="pointer-events-none absolute -translate-x-1/2 -translate-y-[140%] rounded bg-amber-500 px-2 py-0.5 text-xs font-bold text-black shadow"
+          style={{ left: bScreen.x, top: bScreen.y }}
+        >
+          {Math.round(rulerMeas.feet)} ft
+        </div>
+      )}
+      {targetCount > 0 && (
+        <button
+          onClick={() => clearTargets()}
+          className="absolute left-1/2 top-2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-red-600/90 px-3 py-1 text-xs font-semibold text-white shadow"
+        >
+          <i className="fas fa-crosshairs" aria-hidden="true" />
+          {targetCount} target{targetCount > 1 ? "s" : ""}
+          <i className="fas fa-xmark" aria-hidden="true" />
+        </button>
+      )}
+      <button
+        onClick={toggleRuler}
+        aria-pressed={rulerMode}
+        className={`absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center rounded-full shadow ${rulerMode ? "bg-amber-500 text-black" : "bg-zinc-800/90 text-zinc-200"}`}
+        title={rulerMode ? "Exit ruler" : "Measure distance"}
+      >
+        <i className="fas fa-ruler" aria-hidden="true" />
+      </button>
       {infoToken && <TokenInfoPopup token={infoToken} onClose={() => setInfoId(null)} />}
     </div>
   );
