@@ -15,6 +15,7 @@ interface LiveStrike {
   variants?: StrikeVariant[];
   damage?: (args?: Dict) => Promise<unknown>;
   critical?: (args?: Dict) => Promise<unknown>;
+  auxiliaryActions?: { execute(args?: Dict): Promise<unknown> }[];
 }
 interface StrikeActor { system?: { actions?: LiveStrike[] }; }
 
@@ -68,4 +69,28 @@ export function rollStrikeCritical(actorId: string, strikeIndex: number): Promis
     if (!strike.critical) throw new Error(`strike ${strikeIndex} has no critical`);
     return strike.critical(skipDialogEvent("showDamageDialogs"));
   });
+}
+
+/** Run a strike's auxiliary action (draw / sheathe / change grip / retrieve …) by
+ *  index. It mutates equip state → the `updateItem` hook refreshes the card. */
+export function runAuxiliaryAction(actorId: string, strikeIndex: number, auxIndex: number): Promise<void> {
+  return guard(() => {
+    const aux = getStrike(actorId, strikeIndex).auxiliaryActions?.[auxIndex];
+    if (!aux) throw new Error(`no auxiliary action ${auxIndex} on strike ${strikeIndex}`);
+    return aux.execute();
+  });
+}
+
+/** Preview a strike's damage/critical formula without rolling (for the prompt). */
+export async function previewStrikeDamage(actorId: string, strikeIndex: number, critical: boolean): Promise<string | null> {
+  try {
+    const strike = getStrike(actorId, strikeIndex);
+    const method = critical ? strike.critical : strike.damage;
+    if (!method) return null;
+    const formula = await method.call(strike, { getFormula: true });
+    return typeof formula === "string" ? formula : null;
+  } catch (err) {
+    console.error("[pf2e-mobile] strike damage preview failed", err);
+    return null;
+  }
 }

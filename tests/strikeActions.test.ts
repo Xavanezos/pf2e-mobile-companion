@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { rollStrikeAttack, rollStrikeDamage, rollStrikeCritical } from "../src/foundry/actor/strikeActions";
+import {
+  rollStrikeAttack,
+  rollStrikeDamage,
+  rollStrikeCritical,
+  runAuxiliaryAction,
+  previewStrikeDamage,
+} from "../src/foundry/actor/strikeActions";
 
 interface Call { method: string; args: unknown[]; }
 
@@ -8,11 +14,14 @@ function stub(): Call[] {
   const variant = (i: number) => ({
     roll: (...args: unknown[]) => { calls.push({ method: `variant${i}.roll`, args }); return Promise.resolve(); },
   });
+  const formulaFor = (m: string, a: unknown[]) =>
+    (a[0] as { getFormula?: boolean })?.getFormula ? (m === "critical" ? "2d8+8" : "1d8+4") : undefined;
   const strike = {
     slug: "longsword",
     variants: [variant(0), variant(1), variant(2)],
-    damage: (...args: unknown[]) => { calls.push({ method: "damage", args }); return Promise.resolve(); },
-    critical: (...args: unknown[]) => { calls.push({ method: "critical", args }); return Promise.resolve(); },
+    damage: (...args: unknown[]) => { calls.push({ method: "damage", args }); return Promise.resolve(formulaFor("damage", args)); },
+    critical: (...args: unknown[]) => { calls.push({ method: "critical", args }); return Promise.resolve(formulaFor("critical", args)); },
+    auxiliaryActions: [{ execute: (...args: unknown[]) => { calls.push({ method: "aux.execute", args }); return Promise.resolve(); } }],
   };
   const actor = { system: { actions: [strike] } };
   (globalThis as { game?: unknown }).game = {
@@ -47,9 +56,21 @@ describe("strike actions", () => {
     expect(dmgArg.event?.shiftKey).toBe(false);
   });
 
-  it("never throws when the strike or variant is missing", async () => {
+  it("runs an auxiliary action by index", async () => {
+    await runAuxiliaryAction("a", 0, 0);
+    expect(calls.map((c) => c.method)).toEqual(["aux.execute"]);
+  });
+
+  it("previews damage and critical formulas without rolling", async () => {
+    expect(await previewStrikeDamage("a", 0, false)).toBe("1d8+4");
+    expect(await previewStrikeDamage("a", 0, true)).toBe("2d8+8");
+  });
+
+  it("never throws / returns null when the strike, variant, or aux is missing", async () => {
     await expect(rollStrikeAttack("a", 99, 0)).resolves.toBeUndefined();
     await expect(rollStrikeAttack("a", 0, 9)).resolves.toBeUndefined();
+    await expect(runAuxiliaryAction("a", 0, 9)).resolves.toBeUndefined();
+    expect(await previewStrikeDamage("a", 99, false)).toBeNull();
     expect(calls).toEqual([]);
   });
 });
