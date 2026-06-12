@@ -16,14 +16,18 @@ export function SpellEffectModal({
 }) {
   const [name, setName] = useState("Spell Effect");
   const [html, setHtml] = useState("");
+  const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     let alive = true;
     void loadEffect(uuid).then(async (eff) => {
-      if (!alive || !eff) return;
-      setName(eff.name ?? "Spell Effect");
-      const desc = eff.system?.description?.value ?? "";
-      const enriched = desc ? await enrichHtml(desc) : "";
-      if (alive) setHtml(enriched);
+      if (!alive) return;
+      if (eff) {
+        setName(eff.name ?? "Spell Effect");
+        const desc = eff.system?.description?.value ?? "";
+        const enriched = desc ? await enrichHtml(desc) : "";
+        if (alive) setHtml(enriched);
+      }
+      if (alive) setLoaded(true);
     });
     return () => { alive = false; };
   }, [uuid]);
@@ -36,7 +40,7 @@ export function SpellEffectModal({
           dangerouslySetInnerHTML={{ __html: html }}
         />
       ) : (
-        <div className="mb-3 text-sm text-zinc-500">No description.</div>
+        <div className="mb-3 text-sm text-zinc-500">{loaded ? "No description." : "Loading…"}</div>
       )}
       <button
         onClick={onApply}
