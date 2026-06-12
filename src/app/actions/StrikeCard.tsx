@@ -1,20 +1,21 @@
 import type { StrikeView } from "../../foundry/actor/types";
 import { ActionGlyph } from "../sheet/parts/ActionGlyph";
 
-/** One strike: img + name + action glyph + ready dot, traits line, three MAP
- *  attack buttons (labels straight from PF2e), then Damage + Crit. Solid `bg-*`
- *  fills (never `border`) per the Tailwind-v4 button gotchas; dimmed when not
- *  ready. */
+/** One strike: img + name + glyph + ready dot, traits, auxiliary-action row, three
+ *  MAP attack buttons, then Damage + Crit. Buttons call up to ActionsTab, which
+ *  opens the roll prompts. Solid `bg-*` fills per the Tailwind-v4 button gotchas. */
 export function StrikeCard({
   strike,
   onAttack,
   onDamage,
   onCritical,
+  onAux,
 }: {
   strike: StrikeView;
   onAttack: (variantIndex: number) => void;
   onDamage: () => void;
   onCritical: () => void;
+  onAux: (auxIndex: number) => void;
 }) {
   return (
     <section className={`border-b border-zinc-800 px-3 py-2 ${strike.ready ? "" : "opacity-50"}`}>
@@ -34,6 +35,21 @@ export function StrikeCard({
         <div className="mt-0.5 truncate text-[11px] capitalize text-zinc-400">{strike.traits.join(", ")}</div>
       )}
 
+      {strike.auxiliaryActions.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {strike.auxiliaryActions.map((a, i) => (
+            <button
+              key={i}
+              onClick={() => onAux(i)}
+              className="flex items-center gap-1 rounded-md bg-zinc-700 px-2 py-1 text-[11px] font-medium text-zinc-100"
+            >
+              <span>{a.label}</span>
+              <ActionGlyph code={a.glyph} />
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="mt-2 flex items-center gap-2">
         <span className="shrink-0 text-[11px] uppercase tracking-wide text-zinc-500">Attack</span>
         {strike.variants.map((v, i) => (
@@ -50,18 +66,12 @@ export function StrikeCard({
       {(strike.hasDamage || strike.hasCritical) && (
         <div className="mt-2 flex gap-2">
           {strike.hasDamage && (
-            <button
-              onClick={onDamage}
-              className="flex-1 rounded-md bg-zinc-700 px-2 py-1.5 text-sm font-medium text-zinc-100"
-            >
+            <button onClick={onDamage} className="flex-1 rounded-md bg-zinc-700 px-2 py-1.5 text-sm font-medium text-zinc-100">
               Damage
             </button>
           )}
           {strike.hasCritical && (
-            <button
-              onClick={onCritical}
-              className="flex-1 rounded-md bg-amber-700 px-2 py-1.5 text-sm font-medium text-amber-50"
-            >
+            <button onClick={onCritical} className="flex-1 rounded-md bg-amber-700 px-2 py-1.5 text-sm font-medium text-amber-50">
               Crit
             </button>
           )}

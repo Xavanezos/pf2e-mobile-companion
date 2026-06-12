@@ -2,7 +2,16 @@ import { useState } from "react";
 import { useAppStore } from "../store";
 import { useStrikes } from "../actions/useStrikes";
 import { StrikeCard } from "../actions/StrikeCard";
-import { rollStrikeAttack, rollStrikeDamage, rollStrikeCritical } from "../../foundry/actor/strikeActions";
+import { StrikeAttackModal } from "../actions/StrikeAttackModal";
+import { StrikeDamageModal } from "../actions/StrikeDamageModal";
+import {
+  rollStrikeAttack,
+  rollStrikeDamage,
+  rollStrikeCritical,
+  runAuxiliaryAction,
+  previewStrikeDamage,
+} from "../../foundry/actor/strikeActions";
+import type { StrikeView } from "../../foundry/actor/types";
 
 type Section = "strikes" | "actions";
 const SECTIONS: { id: Section; label: string }[] = [
@@ -10,13 +19,15 @@ const SECTIONS: { id: Section; label: string }[] = [
   { id: "actions", label: "Actions" },
 ];
 
-/** The bottom Actions tab — mirrors PF2e's char-sheet Actions tab. Slice A: a
- *  segmented Strikes / Actions control with Strikes implemented. The pinned
- *  Toggles strip + the Actions list (Encounter/Exploration/Downtime) land in
- *  Slice B. */
+type Prompt = { strike: StrikeView; kind: "attack" | "damage" | "crit"; variantIndex: number };
+
+/** The bottom Actions tab — mirrors PF2e's char-sheet Actions tab. Strikes section:
+ *  cards open roll prompts (attack breakdown / damage formula) before rolling, and
+ *  expose auxiliary actions. Actions list + toggles land in Slice B. */
 export function ActionsTab() {
   const actorId = useAppStore((s) => s.actorId);
   const [section, setSection] = useState<Section>("strikes");
+  const [prompt, setPrompt] = useState<Prompt | null>(null);
   const strikes = useStrikes(actorId ?? "");
 
   if (!actorId) return <div className="p-4 text-sm text-zinc-500">No character selected.</div>;
@@ -47,15 +58,38 @@ export function ActionsTab() {
             <StrikeCard
               key={`${s.slug}-${s.index}`}
               strike={s}
-              onAttack={(vi) => void rollStrikeAttack(actorId, s.index, vi)}
-              onDamage={() => void rollStrikeDamage(actorId, s.index)}
-              onCritical={() => void rollStrikeCritical(actorId, s.index)}
+              onAttack={(vi) => setPrompt({ strike: s, kind: "attack", variantIndex: vi })}
+              onDamage={() => setPrompt({ strike: s, kind: "damage", variantIndex: 0 })}
+              onCritical={() => setPrompt({ strike: s, kind: "crit", variantIndex: 0 })}
+              onAux={(ai) => void runAuxiliaryAction(actorId, s.index, ai)}
             />
           ))
         ))}
 
       {section === "actions" && (
         <div className="p-4 text-sm text-zinc-500">Actions list &amp; toggles — coming next (Slice B).</div>
+      )}
+
+      {prompt?.kind === "attack" && (
+        <StrikeAttackModal
+          strike={prompt.strike}
+          variantIndex={prompt.variantIndex}
+          onRoll={() => void rollStrikeAttack(actorId, prompt.strike.index, prompt.variantIndex)}
+          onClose={() => setPrompt(null)}
+        />
+      )}
+      {(prompt?.kind === "damage" || prompt?.kind === "crit") && (
+        <StrikeDamageModal
+          title={prompt.strike.label}
+          rollLabel={prompt.kind === "crit" ? "Roll Critical" : "Roll Damage"}
+          loadFormula={() => previewStrikeDamage(actorId, prompt.strike.index, prompt.kind === "crit")}
+          onRoll={() =>
+            void (prompt.kind === "crit"
+              ? rollStrikeCritical(actorId, prompt.strike.index)
+              : rollStrikeDamage(actorId, prompt.strike.index))
+          }
+          onClose={() => setPrompt(null)}
+        />
       )}
     </div>
   );
