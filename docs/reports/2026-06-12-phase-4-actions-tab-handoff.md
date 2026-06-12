@@ -2,7 +2,7 @@
 
 Handoff for resuming Phase 4 in a new session. Everything below is committed to `main`; working tree clean; `dist/` gitignored. **155 tests green, `tsc --noEmit` clean, production `vite build` clean.**
 
-> **Update 2026-06-12 (latest): Phase 4 is now CODE-COMPLETE on `main`.** Slice **A.2b** (attack modifier toggle) + **Slice B** (Actions list + Toggles bar) are built, plus **two live-bug fixes** (chat-card Crit `55d3e9e`; the A.2b toggle now applies post-clone `73f11a6`). A single **live-verification pass** is pending — the checklist is **`docs/reports/2026-06-12-phase-4-test-report.md`** (start there). Slice B plan: `docs/superpowers/plans/2026-06-12-phase-4-slice-b-actions-toggles.md`.
+> **Update 2026-06-12 (latest): Phase 4 is DONE — marked complete by the user.** Slice **A.2b** (attack modifier toggle) + **Slice B** (Actions list + Toggles bar) built, plus **two live-bug fixes** (chat-card Crit `55d3e9e`; the A.2b toggle now applies post-clone `73f11a6`). 155 tests + typecheck + prod build green. A.2b-fix / Slice B / the 2 fixes were accepted at code-complete; the live checklist **`docs/reports/2026-06-12-phase-4-test-report.md`** is retained for any future spot-check (esp. the attack-toggle WITH a target). Slice B plan: `docs/superpowers/plans/2026-06-12-phase-4-slice-b-actions-toggles.md`.
 
 ---
 
