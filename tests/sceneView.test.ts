@@ -75,11 +75,11 @@ describe("buildSceneView", () => {
 
   it("passes the scene grid info through", () => {
     const v = buildSceneView(
-      { id: "s1", background: { src: "bg" }, grid: { type: 1, color: "#abcdef", alpha: 0.3 }, tokens: [] },
+      { id: "s1", background: { src: "bg" }, grid: { type: 1, color: "#abcdef", alpha: 0.3, distance: 5 }, tokens: [] },
       DIMS,
       GM,
     );
-    expect(v.grid).toEqual({ type: 1, color: "#abcdef", alpha: 0.3 });
+    expect(v.grid).toEqual({ type: 1, color: "#abcdef", alpha: 0.3, distance: 5 });
   });
 
   it("handles an empty scene", () => {

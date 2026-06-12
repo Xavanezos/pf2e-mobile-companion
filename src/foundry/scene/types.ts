@@ -34,7 +34,7 @@ export interface TokenView {
 export interface SceneView {
   id: string;                    // active scene id (for moveToken dispatch)
   background: string | null;     // scene.background.src
-  grid: { type: number; color: string; alpha: number } | null; // CONST.GRID_TYPES, line color/opacity
+  grid: { type: number; color: string; alpha: number; distance: number } | null; // CONST.GRID_TYPES, line color/opacity, feet per square
   dims: SceneDimensionsLike;
   tokens: TokenView[];
   hasScene: true;
@@ -75,6 +75,6 @@ export interface TokenLike {
 export interface SceneLike {
   id: string;
   background?: { src?: string | null } | null;
-  grid?: { type: number; color: string; alpha: number } | null;
+  grid?: { type: number; color: string; alpha: number; distance: number } | null;
   tokens: TokenLike[] | { contents: TokenLike[] };
 }

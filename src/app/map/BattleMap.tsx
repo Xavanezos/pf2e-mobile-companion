@@ -4,9 +4,10 @@ import { useAppStore } from "../store";
 import { useScene } from "./useScene";
 import { TokenSprite } from "./TokenSprite";
 import { TokenInfoPopup } from "./TokenInfoPopup";
-import { screenToScene, type ViewTransform } from "../../foundry/scene/geometry";
+import { screenToScene, sceneToScreen, type ViewTransform } from "../../foundry/scene/geometry";
 import { moveToken } from "../../foundry/scene/actions";
 import { clearTargets } from "../../foundry/scene/targeting";
+import { snapToCenter, measureDistance, type GridSpec, type Point } from "../../foundry/scene/ruler";
 
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 4;
@@ -52,6 +53,23 @@ export function BattleMap() {
   const [drag, setDrag] = useState<{ id: string; left: number; top: number } | null>(null);
   const [infoId, setInfoId] = useState<string | null>(null);
 
+  // Ruler mode: while on, one-finger drag measures A→B and pan/pinch/token-drag/
+  // tap are all suspended. `rulerModeRef`/`rulerRef` mirror the state for the live
+  // pointer handlers (same pattern as `tRef`/`dragRef`); the line stays on screen
+  // after the drag and is cleared by toggling the mode off.
+  const [rulerMode, setRulerMode] = useState(false);
+  const rulerModeRef = useRef(false);
+  const [rulerLine, setRulerLine] = useState<{ a: Point; b: Point } | null>(null);
+  const rulerRef = useRef<{ pointerId: number; a: Point; b: Point } | null>(null);
+  const toggleRuler = useCallback(() => {
+    const next = !rulerModeRef.current;
+    rulerModeRef.current = next;
+    setRulerMode(next);
+    rulerRef.current = null;
+    setRulerLine(null);
+    if (next) setInfoId(null); // measuring closes any open info popup
+  }, []);
+
   // Fit the whole scene into the viewport on mount / scene-dimension change.
   const dimsKey = view ? `${view.dims.width}x${view.dims.height}` : "none";
   useLayoutEffect(() => {
@@ -75,8 +93,25 @@ export function BattleMap() {
     const [a, b] = pts;
     return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, dist: Math.hypot(a.x - b.x, a.y - b.y) };
   };
+  // Live grid for the ruler — only called from handlers/render where `view` is set.
+  const gridSpec = (): GridSpec => ({
+    size: view!.dims.size,
+    distance: view!.grid?.distance ?? 5,
+    square: (view!.grid?.type ?? 1) === 1,
+  });
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const cur0r = tRef.current;
+    // Ruler mode replaces all other gestures: drop the start point and capture.
+    if (rulerModeRef.current && cur0r && view) {
+      const lp0 = localPoint(e);
+      const sp = screenToScene(lp0.x, lp0.y, cur0r);
+      const p = snapToCenter(gridSpec(), sp.x, sp.y);
+      rulerRef.current = { pointerId: e.pointerId, a: p, b: p };
+      setRulerLine({ a: p, b: p });
+      viewportRef.current?.setPointerCapture(e.pointerId);
+      return;
+    }
     if (dragRef.current) return; // ignore extra pointers mid-drag
     const lp = localPoint(e);
     const cur0 = tRef.current;
@@ -104,6 +139,14 @@ export function BattleMap() {
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     const cur0 = tRef.current;
     if (!cur0) return;
+    const r = rulerRef.current;
+    if (r && r.pointerId === e.pointerId && view) {
+      const lp = localPoint(e);
+      const sp = screenToScene(lp.x, lp.y, cur0);
+      r.b = snapToCenter(gridSpec(), sp.x, sp.y);
+      setRulerLine({ a: r.a, b: r.b });
+      return;
+    }
     const pr = pressRef.current;
     if (pr && pr.pointerId === e.pointerId && !pr.moved) {
       const lp = localPoint(e);
@@ -133,6 +176,11 @@ export function BattleMap() {
   };
 
   const endPointer = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const r = rulerRef.current;
+    if (r && r.pointerId === e.pointerId) {
+      rulerRef.current = null; // leave the measured line on screen
+      return;
+    }
     const pr = pressRef.current;
     const isTap = !!pr && pr.pointerId === e.pointerId && !pr.moved && !!pr.tokenId;
     const d = dragRef.current;
@@ -174,6 +222,12 @@ export function BattleMap() {
   // Grid line width in scene px that renders ~1px on screen at the current zoom
   // (the grid lives inside the scaled stage, so a fixed 1px would vanish when zoomed out).
   const gridLine = t ? Math.max(1, 1 / t.zoom) : 1;
+  // Ruler render: keep the stroke/dots ~constant on screen (they live in the scaled
+  // stage); the "ft" label is a viewport sibling positioned in screen px so its font
+  // never scales with zoom.
+  const z = t?.zoom ?? 1;
+  const rulerMeas = rulerLine ? measureDistance(gridSpec(), rulerLine.a, rulerLine.b) : null;
+  const rulerLabel = rulerLine && t ? sceneToScreen(rulerLine.b.x, rulerLine.b.y, t) : null;
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
@@ -230,6 +284,25 @@ export function BattleMap() {
               const shown = dragging && drag ? { ...tok, left: drag.left, top: drag.top } : tok;
               return <TokenSprite key={tok.id} token={shown} showLabel={showLabels} dragging={dragging} />;
             })}
+            {rulerLine && (
+              <svg
+                className="pointer-events-none absolute left-0 top-0 overflow-visible"
+                width={view.dims.width}
+                height={view.dims.height}
+              >
+                <line
+                  x1={rulerLine.a.x}
+                  y1={rulerLine.a.y}
+                  x2={rulerLine.b.x}
+                  y2={rulerLine.b.y}
+                  stroke="#fbbf24"
+                  strokeWidth={Math.max(2, 3 / z)}
+                  strokeLinecap="round"
+                />
+                <circle cx={rulerLine.a.x} cy={rulerLine.a.y} r={Math.max(3, 5 / z)} fill="#fbbf24" />
+                <circle cx={rulerLine.b.x} cy={rulerLine.b.y} r={Math.max(3, 5 / z)} fill="#fbbf24" />
+              </svg>
+            )}
           </div>
         )}
       </div>
@@ -244,6 +317,27 @@ export function BattleMap() {
           {targetCount} target{targetCount > 1 ? "s" : ""}
           <i className="fas fa-xmark" aria-hidden="true" />
         </button>
+      )}
+      {/* Ruler toggle (bottom-right, thumb-reachable) — sibling of the viewport so
+          the map's setPointerCapture can't steal its tap. */}
+      <button
+        onClick={toggleRuler}
+        aria-pressed={rulerMode}
+        className={`absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center rounded-full shadow ${
+          rulerMode ? "bg-amber-500 text-black" : "bg-zinc-800/90 text-zinc-200"
+        }`}
+        title={rulerMode ? "Exit ruler" : "Measure distance"}
+      >
+        <i className="fas fa-ruler" aria-hidden="true" />
+      </button>
+      {/* Live distance label, positioned in screen px above the moving endpoint. */}
+      {rulerLabel && rulerMeas && (
+        <div
+          className="pointer-events-none absolute -translate-x-1/2 -translate-y-[140%] rounded bg-amber-500 px-2 py-0.5 text-xs font-bold text-black shadow"
+          style={{ left: rulerLabel.px, top: rulerLabel.py }}
+        >
+          {Math.round(rulerMeas.feet)} ft
+        </div>
       )}
       {infoToken && <TokenInfoPopup token={infoToken} onClose={() => setInfoId(null)} />}
     </div>

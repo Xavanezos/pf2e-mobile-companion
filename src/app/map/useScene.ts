@@ -38,7 +38,7 @@ export function useScene(actorId: string | null): SceneView | null {
       id: scene.id,
       background: { src: scene._source?.background?.src ?? scene.background?.src ?? null },
       grid: g
-        ? { type: g.type ?? 1, color: String(g.color ?? "#000000"), alpha: typeof g.alpha === "number" ? g.alpha : 0.2 }
+        ? { type: g.type ?? 1, color: String(g.color ?? "#000000"), alpha: typeof g.alpha === "number" ? g.alpha : 0.2, distance: typeof g.distance === "number" ? g.distance : 5 }
         : null,
       tokens: scene.tokens,
     };
