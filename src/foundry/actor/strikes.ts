@@ -9,6 +9,13 @@ function mapVariants(variants: StrikeLike["variants"]): StrikeVariantView[] {
   return (variants ?? []).map((v) => ({ label: v.label ?? "", penalty: v.penalty ?? 0 }));
 }
 
+/** PF2e's auxiliary-action glyph → our ActionGlyph code when recognised, else null
+ *  (the row just shows its label). Aux actions are typically 1-action. */
+function auxGlyph(g: string | undefined): string | null {
+  if (g === "1" || g === "2" || g === "3" || g === "reaction" || g === "free") return g;
+  return null;
+}
+
 /** Pure: map `actor.system.actions` to the Strikes view. Keeps the ORIGINAL array
  *  index on each kept strike (the action layer re-reads the live strike by it),
  *  filters to real strikes (`type === "strike"` with a non-empty variants array),
@@ -29,6 +36,12 @@ export function buildStrikesView(actor: StrikeActorLike): StrikesView {
       glyph: "1",
       traits: (s.traits ?? []).map(mapTrait).filter(Boolean),
       variants: mapVariants(s.variants),
+      auxiliaryActions: (s.auxiliaryActions ?? [])
+        .map((a) => ({ label: a.label ?? "", glyph: auxGlyph(a.glyph) }))
+        .filter((a) => a.label),
+      modifiers: (s.modifiers ?? [])
+        .filter((m) => m.enabled || !m.hideIfDisabled)
+        .map((m) => ({ slug: m.slug ?? "", label: m.label ?? "", value: m.modifier ?? 0, enabled: m.enabled ?? false })),
       hasDamage: typeof s.damage === "function",
       hasCritical: typeof s.critical === "function",
     });

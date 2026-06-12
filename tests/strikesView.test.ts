@@ -69,4 +69,39 @@ describe("buildStrikesView", () => {
     expect(buildStrikesView({})).toEqual([]);
     expect(buildStrikesView({ system: {} })).toEqual([]);
   });
+
+  it("maps auxiliary actions and enabled modifiers (dropping hidden-disabled ones)", () => {
+    const actor: StrikeActorLike = {
+      system: {
+        actions: [
+          strike({
+            auxiliaryActions: [
+              { label: "Draw", glyph: "1" },
+              { label: "Change Grip", glyph: "1" },
+            ],
+            modifiers: [
+              { slug: "prof", label: "Proficiency", modifier: 9, enabled: true },
+              { slug: "rune", label: "Potency", modifier: 1, enabled: true, hideIfDisabled: true },
+              { slug: "off", label: "Inactive", modifier: 2, enabled: false, hideIfDisabled: true },
+            ],
+          }),
+        ],
+      },
+    };
+    const v = buildStrikesView(actor);
+    expect(v[0].auxiliaryActions).toEqual([
+      { label: "Draw", glyph: "1" },
+      { label: "Change Grip", glyph: "1" },
+    ]);
+    expect(v[0].modifiers).toEqual([
+      { slug: "prof", label: "Proficiency", value: 9, enabled: true },
+      { slug: "rune", label: "Potency", value: 1, enabled: true },
+    ]);
+  });
+
+  it("defaults auxiliaryActions and modifiers to [] when absent", () => {
+    const v = buildStrikesView({ system: { actions: [strike()] } });
+    expect(v[0].auxiliaryActions).toEqual([]);
+    expect(v[0].modifiers).toEqual([]);
+  });
 });

@@ -231,6 +231,11 @@ export interface CharacterLike {
  *  ("+17" / "+12" / "+7"); `penalty` is 0 / -5 / -10. */
 export interface StrikeVariantView { label: string; penalty: number; }
 
+/** A strike auxiliary action (draw / sheathe / change grip / retrieve …). */
+export interface StrikeAuxView { label: string; glyph: string | null; }
+/** One row of the attack breakdown; `slug` identifies it for the A.2b toggle. */
+export interface StrikeModView { slug: string; label: string; value: number; enabled: boolean; }
+
 /** A single strike for the Actions tab. `index` is the position in
  *  `actor.system.actions` — the action layer re-reads the live strike by it. */
 export interface StrikeView {
@@ -242,6 +247,8 @@ export interface StrikeView {
   glyph: string; // strikes are always a single action
   traits: string[];
   variants: StrikeVariantView[];
+  auxiliaryActions: StrikeAuxView[];
+  modifiers: StrikeModView[];
   hasDamage: boolean;
   hasCritical: boolean;
 }
@@ -261,6 +268,8 @@ export interface StrikeLike {
   /** Live roll callbacks — present (functions) on real strikes; read only as flags. */
   damage?: unknown;
   critical?: unknown;
+  auxiliaryActions?: { label?: string; glyph?: string }[];
+  modifiers?: { slug?: string; label?: string; modifier?: number; enabled?: boolean; ignored?: boolean; hideIfDisabled?: boolean }[];
   item?: { img?: string };
 }
 export interface StrikeActorLike { system?: { actions?: StrikeLike[] }; }
