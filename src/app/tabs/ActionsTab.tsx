@@ -14,6 +14,13 @@ import {
   setStrikeAmmo,
 } from "../../foundry/actor/strikeActions";
 import type { StrikeView } from "../../foundry/actor/types";
+import { useToggles } from "../actions/useToggles";
+import { useActionsList } from "../actions/useActionsList";
+import { ToggleBar } from "../actions/ToggleBar";
+import { ActionsList } from "../actions/ActionsList";
+import { DetailModal } from "../sheet/DetailModal";
+import { setToggle } from "../../foundry/actor/toggles";
+import { useAction } from "../../foundry/actor/actionUse";
 
 type Section = "strikes" | "actions";
 const SECTIONS: { id: Section; label: string }[] = [
@@ -31,12 +38,21 @@ export function ActionsTab() {
   const actorId = useAppStore((s) => s.actorId);
   const [section, setSection] = useState<Section>("strikes");
   const [prompt, setPrompt] = useState<Prompt | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const strikes = useStrikes(actorId ?? "");
+  const toggles = useToggles(actorId ?? "");
+  const actionsList = useActionsList(actorId ?? "");
 
   if (!actorId) return <div className="p-4 text-sm text-zinc-500">No character selected.</div>;
 
   return (
     <div>
+      {toggles && toggles.length > 0 && (
+        <ToggleBar
+          toggles={toggles}
+          onToggle={(t, value) => void setToggle(actorId, t.domain, t.option, t.itemId, value)}
+        />
+      )}
       <nav className="flex gap-1 overflow-x-auto border-b border-zinc-800 bg-zinc-950 px-2 py-1">
         {SECTIONS.map((s) => (
           <button
@@ -70,9 +86,16 @@ export function ActionsTab() {
           ))
         ))}
 
-      {section === "actions" && (
-        <div className="p-4 text-sm text-zinc-500">Actions list &amp; toggles — coming next (Slice B).</div>
-      )}
+      {section === "actions" &&
+        (actionsList === null ? (
+          <div className="p-4 text-sm text-zinc-500">Loading actions…</div>
+        ) : (
+          <ActionsList
+            groups={actionsList}
+            onUse={(id) => void useAction(actorId, id)}
+            onShowDetail={(id) => setDetailId(id)}
+          />
+        ))}
 
       {prompt?.kind === "attack" && (
         <StrikeAttackModal
@@ -98,6 +121,8 @@ export function ActionsTab() {
           onClose={() => setPrompt(null)}
         />
       )}
+
+      {detailId && <DetailModal actorId={actorId} itemId={detailId} onClose={() => setDetailId(null)} />}
     </div>
   );
 }

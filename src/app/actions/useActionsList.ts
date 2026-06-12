@@ -1,0 +1,30 @@
+import { useCallback, useMemo, useReducer } from "react";
+import { useFoundryHook } from "../useFoundryHook";
+import { buildActionsView } from "../../foundry/actor/actions";
+import type { ActionsActorLike, ActionsView } from "../../foundry/actor/types";
+
+/** Live grouped actions for the active actor. `actor.itemTypes.*` is prepared
+ *  synchronously, so this mirrors `useStrikes` (a memo invalidated by a version
+ *  bump) rather than the async `useSpells`. Re-preps on actor/item hooks so a
+ *  frequency decrement or feat change reflects live. Returns null if the actor is gone. */
+export function useActionsList(actorId: string): ActionsView | null {
+  const [version, bump] = useReducer((n: number) => n + 1, 0);
+
+  const onActor = useCallback((doc: any) => { if (doc?.id === actorId) bump(); }, [actorId]);
+  const onItem = useCallback(
+    (doc: any) => { if ((doc?.parent?.id ?? doc?.actor?.id) === actorId) bump(); },
+    [actorId],
+  );
+
+  useFoundryHook("updateActor", onActor);
+  useFoundryHook("createItem", onItem);
+  useFoundryHook("updateItem", onItem);
+  useFoundryHook("deleteItem", onItem);
+
+  return useMemo(() => {
+    const actor = (game as any).actors.get(actorId);
+    if (!actor) return null;
+    return buildActionsView(actor as ActionsActorLike);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actorId, version]);
+}
