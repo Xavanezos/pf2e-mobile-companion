@@ -1,6 +1,7 @@
 import { useAppStore } from "./store";
 import { SheetTab } from "./SheetTab";
 import { ChatTab } from "./tabs/ChatTab";
+import { ActionsTab } from "./tabs/ActionsTab";
 import { Placeholder } from "./tabs/Placeholder";
 
 export function TabContent() {
@@ -9,7 +10,7 @@ export function TabContent() {
     case "sheet":
       return <SheetTab />;
     case "actions":
-      return <Placeholder title="Actions & Macros" phase="Coming in Phase 4" />;
+      return <ActionsTab />;
     case "combat":
       return <Placeholder title="Combat Tracker" phase="Coming in Phase 5" />;
     case "chat":
