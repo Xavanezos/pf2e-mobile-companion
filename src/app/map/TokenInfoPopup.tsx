@@ -1,4 +1,5 @@
 import { Modal } from "../sheet/parts/Modal";
+import { Chip } from "../sheet/parts/Chip";
 import { toggleTarget } from "../../foundry/scene/targeting";
 import type { TokenView } from "../../foundry/scene/types";
 
@@ -47,6 +48,30 @@ export function TokenInfoPopup({ token, onClose }: { token: TokenView; onClose: 
           )}
         </div>
       </div>
+      {(token.conditions.length > 0 || token.effects.length > 0) && (
+        <div className="mt-4 space-y-2">
+          {token.conditions.length > 0 && (
+            <div>
+              <div className="mb-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">Conditions</div>
+              <div className="flex flex-wrap gap-1">
+                {token.conditions.map((c) => (
+                  <Chip key={c.slug} tone="warn">{c.name}{c.value != null ? ` ${c.value}` : ""}</Chip>
+                ))}
+              </div>
+            </div>
+          )}
+          {token.effects.length > 0 && (
+            <div>
+              <div className="mb-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">Effects</div>
+              <div className="flex flex-wrap gap-1">
+                {token.effects.map((e, i) => (
+                  <Chip key={e.id ?? `e${i}`}>{e.name}{e.badge ? ` ${e.badge}` : ""}</Chip>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       <button
         onClick={() => toggleTarget(token.id)}
         className={`mt-4 flex w-full items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-white ${token.targeted ? "bg-red-600" : "bg-indigo-600"}`}
