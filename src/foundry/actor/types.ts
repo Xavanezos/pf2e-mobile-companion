@@ -239,6 +239,11 @@ export interface StrikeModView { slug: string; label: string; value: number; ena
 /** Ranged ammunition for a strike's `<select>`; null for melee/thrown weapons. */
 export interface StrikeAmmoView { options: { id: string; label: string }[]; selectedId: string | null; remaining: number; }
 
+/** Result of a live attack-modifier preview (A.2b): the grand total recomputed by
+ *  PF2e's own stacking (incl. the MAP penalty), and the post-stacking modifier rows
+ *  (with the user-disabled ones flipped to `enabled: false`). */
+export interface StrikeAttackPreview { total: number; parts: StrikeModView[]; }
+
 /** A single strike for the Actions tab. `index` is the position in
  *  `actor.system.actions` — the action layer re-reads the live strike by it. */
 export interface StrikeView {
