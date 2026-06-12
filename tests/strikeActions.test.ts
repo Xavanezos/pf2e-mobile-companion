@@ -5,6 +5,7 @@ import {
   rollStrikeCritical,
   runAuxiliaryAction,
   previewStrikeDamage,
+  setStrikeAmmo,
 } from "../src/foundry/actor/strikeActions";
 
 interface Call { method: string; args: unknown[]; }
@@ -22,6 +23,7 @@ function stub(): Call[] {
     damage: (...args: unknown[]) => { calls.push({ method: "damage", args }); return Promise.resolve(formulaFor("damage", args)); },
     critical: (...args: unknown[]) => { calls.push({ method: "critical", args }); return Promise.resolve(formulaFor("critical", args)); },
     auxiliaryActions: [{ execute: (...args: unknown[]) => { calls.push({ method: "aux.execute", args }); return Promise.resolve(); } }],
+    item: { id: "w1", update: (...args: unknown[]) => { calls.push({ method: "item.update", args }); return Promise.resolve(); } },
   };
   const actor = { system: { actions: [strike] } };
   (globalThis as { game?: unknown }).game = {
@@ -64,6 +66,17 @@ describe("strike actions", () => {
   it("previews damage and critical formulas without rolling", async () => {
     expect(await previewStrikeDamage("a", 0, false)).toBe("1d8+4");
     expect(await previewStrikeDamage("a", 0, true)).toBe("2d8+8");
+  });
+
+  it("sets the selected ammo on the strike's weapon item", async () => {
+    await setStrikeAmmo("a", 0, "ammo1");
+    expect(calls[0].method).toBe("item.update");
+    expect(calls[0].args[0]).toEqual({ system: { selectedAmmoId: "ammo1" } });
+  });
+
+  it("clears ammo with null", async () => {
+    await setStrikeAmmo("a", 0, null);
+    expect(calls[0].args[0]).toEqual({ system: { selectedAmmoId: null } });
   });
 
   it("never throws / returns null when the strike, variant, or aux is missing", async () => {

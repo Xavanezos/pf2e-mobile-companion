@@ -16,6 +16,7 @@ interface LiveStrike {
   damage?: (args?: Dict) => Promise<unknown>;
   critical?: (args?: Dict) => Promise<unknown>;
   auxiliaryActions?: { execute(args?: Dict): Promise<unknown> }[];
+  item?: { update(data: Dict): Promise<unknown> };
 }
 interface StrikeActor { system?: { actions?: LiveStrike[] }; }
 
@@ -93,4 +94,14 @@ export async function previewStrikeDamage(actorId: string, strikeIndex: number, 
     console.error("[pf2e-mobile] strike damage preview failed", err);
     return null;
   }
+}
+
+/** Set (or clear, with null) the selected ammunition on a ranged strike's weapon.
+ *  PF2e auto-consumes a round on the attack roll, so rolling is unchanged. */
+export function setStrikeAmmo(actorId: string, strikeIndex: number, ammoId: string | null): Promise<void> {
+  return guard(() => {
+    const weapon = getStrike(actorId, strikeIndex).item;
+    if (!weapon?.update) throw new Error(`strike ${strikeIndex} has no weapon item`);
+    return weapon.update({ system: { selectedAmmoId: ammoId } });
+  });
 }
