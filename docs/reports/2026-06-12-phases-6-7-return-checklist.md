@@ -1,6 +1,6 @@
 # Phases 7 (battle map) + 6 (journals) — Return checklist
 
-**Date:** 2026-06-12 · **Branch:** `main` (all work committed) · **Tests:** 205 passing (42 files) · typecheck + prod build clean.
+**Date:** 2026-06-12 · **Branch:** `main` (all work committed) · **Tests:** 206 passing (42 files) · typecheck + prod build clean.
 
 You were away; this is what got done autonomously and exactly what to test (and likely fix) now that you're back. Read the **interpretation note** first — if I read your instruction wrong, that's the thing to correct before anything else.
 
@@ -88,7 +88,7 @@ Have the GM **share a multi-page entry** (incl. a hidden page), an **image hando
 ## 6. Re-verify any time
 
 ```
-npm run test       # 205 passing (42 files)
+npm run test       # 206 passing (42 files)
 npm run typecheck  # clean
 npm run build      # clean prod build → dist/
 ```
@@ -120,3 +120,20 @@ Foundry's targeting is canvas-coupled and `setTarget` no-ops with `noCanvas`. I 
 - [ ] Multi-target with a multi-target spell (e.g. a save-based AoE) applies to all targets as expected.
 
 **Deferred polish (noted, not built):** long-press a token to quick-target without opening the popup (faster multi-target); a per-token "is targeted by N players" indicator. The current tap→popup→Target flow covers single + multi.
+
+---
+
+## 8. Post-return round 2: move + grid (2026-06-12)
+
+Two more you reported — both fixed on `main`, **live-verified** (Player1, dragging Valeros's token). **206 tests + build green.**
+
+### Fixed — couldn't move a token from the phone
+`isMine`, ownership, and the drag gesture were all fine — the move dispatched `token.update({x,y})`, which **crashed inside Foundry**: `TypeError: Cannot read properties of null (reading 'isSquare')`. Root cause: Foundry v12+ measures the movement path on every x/y change, and **PF2e's `TokenDocument#measureMovementPath` dereferences `canvas.grid.isSquare`** — null with `noCanvas`. `canvas.grid` is a prototype getter (can't assign), so `moveToken` now **lends it the scene's `SquareGrid` via `Object.defineProperty` for the update's duration**, then restores (no-op when canvas is on). Verified: a real drag moves the token (3100,500 → 3500,700) and the GM sees it.
+
+### Fixed — couldn't see the grid
+The grid was **never drawn** (only the background + tokens). Now rendered as an overlay. Two gotchas handled: (1) most scenes leave the grid color **black**, invisible on a dark battle map → I render **white lines with `mix-blend-mode: difference`** so it shows on any map; (2) the grid lives inside the zoom-scaled stage, so a fixed 1px line vanishes when zoomed out → **line width scales with zoom** to stay ~1px on screen. Square grids (type 1) only for v1. Verified: grid is crisp and visible.
+
+**Confirm in play:**
+- [ ] Drag your own token around — it moves on the GM's canvas; dragging a token you *don't* own should toast + snap back.
+- [ ] **Hex / gridless scenes:** v1 only draws **square** grids — a hex scene shows no grid overlay (tokens/positioning still work). Tell me if you use hex and I'll add it.
+- [ ] Grid visibility on a **light** map (the difference blend should still show it, but worth a look).
