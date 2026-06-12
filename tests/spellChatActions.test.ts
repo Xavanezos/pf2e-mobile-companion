@@ -9,6 +9,7 @@ describe("findSpellEffectUuid", () => {
   it("returns null when there is no spell-effects link", () => {
     expect(findSpellEffectUuid("<p>No effect here. @UUID[Compendium.pf2e.conditions.Item.Frightened]</p>")).toBeNull();
     expect(findSpellEffectUuid(undefined)).toBeNull();
+    expect(findSpellEffectUuid("")).toBeNull();
   });
 });
 
@@ -22,6 +23,10 @@ describe("buildSpellBaseDamage", () => {
       }),
     ).toBe("1d6 fire + 1d6 persistent fire");
   });
+  it("renders a formula-only partial (no type/category)", () => {
+    expect(buildSpellBaseDamage({ "0": { formula: "1d6" } })).toBe("1d6");
+  });
+
   it("returns empty string when there is no damage", () => {
     expect(buildSpellBaseDamage(undefined)).toBe("");
     expect(buildSpellBaseDamage({})).toBe("");

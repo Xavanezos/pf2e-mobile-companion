@@ -12,9 +12,10 @@ describe("interactionFromControl", () => {
       .toEqual({ kind: "save", messageId: "m1", saveType: "reflex", dc: 18 });
   });
 
-  it("ignores a save button with a non-numeric dc", () => {
-    expect(interactionFromControl({ action: "spell-save", save: "reflex", dc: "NaN", uuid: null }, "m1"))
-      .toBeNull();
+  it("ignores a save button with a non-numeric, empty, or zero dc", () => {
+    expect(interactionFromControl({ action: "spell-save", save: "reflex", dc: "NaN", uuid: null }, "m1")).toBeNull();
+    expect(interactionFromControl({ action: "spell-save", save: "reflex", dc: "", uuid: null }, "m1")).toBeNull();
+    expect(interactionFromControl({ action: "spell-save", save: "reflex", dc: "0", uuid: null }, "m1")).toBeNull();
   });
 
   it("maps a spell-effects content link to an effect interaction", () => {

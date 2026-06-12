@@ -7,7 +7,9 @@ export type CardInteraction =
   | { kind: "effect"; uuid: string };
 
 /** Pure: given the attributes of the tapped control, produce the interaction.
- *  Disambiguates by which attributes are present (effect link vs damage/save button). */
+ *  Disambiguates by which attributes are present. The caller's CONTROL_SELECTOR
+ *  matches either an effect link (a[data-uuid]) or an action button, never both, so
+ *  the uuid-before-action order below is unambiguous. */
 export function interactionFromControl(
   c: { action: string | null; save: string | null; dc: string | null; uuid: string | null },
   messageId: string,
@@ -16,7 +18,8 @@ export function interactionFromControl(
   if (c.action === "spell-damage") return { kind: "damage", messageId };
   if (c.action === "spell-save") {
     const dc = Number(c.dc);
-    if (c.save && Number.isInteger(dc)) return { kind: "save", messageId, saveType: c.save, dc };
+    // dc must be a positive integer; a missing/empty data-dc (Number("") === 0) is rejected
+    if (c.save && Number.isInteger(dc) && dc > 0) return { kind: "save", messageId, saveType: c.save, dc };
   }
   return null;
 }

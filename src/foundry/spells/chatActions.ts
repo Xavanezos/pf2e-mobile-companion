@@ -8,7 +8,7 @@ interface SpellDamagePartial { formula?: string; type?: string; category?: strin
 export function buildSpellBaseDamage(damage: Record<string, SpellDamagePartial> | undefined): string {
   if (!damage) return "";
   return Object.values(damage)
-    .map((d) => [d.formula, d.category ?? "", d.type ?? ""].filter(Boolean).join(" ").trim())
+    .map((d) => [d.formula, d.category ?? "", d.type ?? ""].filter(Boolean).join(" "))
     .filter(Boolean)
     .join(" + ");
 }
