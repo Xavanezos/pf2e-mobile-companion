@@ -6,6 +6,7 @@ import { TokenSprite } from "./TokenSprite";
 import { TokenInfoPopup } from "./TokenInfoPopup";
 import { screenToScene, type ViewTransform } from "../../foundry/scene/geometry";
 import { moveToken } from "../../foundry/scene/actions";
+import { clearTargets } from "../../foundry/scene/targeting";
 
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 4;
@@ -169,12 +170,13 @@ export function BattleMap() {
 
   const showLabels = !!t && t.zoom >= 0.35;
   const infoToken = infoId ? view.tokens.find((tk) => tk.id === infoId) ?? null : null;
+  const targetCount = view.tokens.filter((tk) => tk.targeted).length;
 
   return (
-    <>
+    <div className="relative h-full w-full overflow-hidden bg-black">
       <div
         ref={viewportRef}
-        className="relative h-full w-full touch-none overflow-hidden bg-black"
+        className="absolute inset-0 touch-none"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endPointer}
@@ -212,9 +214,19 @@ export function BattleMap() {
           </div>
         )}
       </div>
-      {/* Rendered OUTSIDE the pointer-capturing viewport so its X / backdrop taps
+      {/* Overlays are SIBLINGS of the pointer-capturing viewport so their taps
           aren't stolen by the map's setPointerCapture. */}
+      {targetCount > 0 && (
+        <button
+          onClick={() => clearTargets()}
+          className="absolute left-1/2 top-2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-red-600/90 px-3 py-1 text-xs font-semibold text-white shadow"
+        >
+          <i className="fas fa-crosshairs" aria-hidden="true" />
+          {targetCount} target{targetCount > 1 ? "s" : ""}
+          <i className="fas fa-xmark" aria-hidden="true" />
+        </button>
+      )}
       {infoToken && <TokenInfoPopup token={infoToken} onClose={() => setInfoId(null)} />}
-    </>
+    </div>
   );
 }

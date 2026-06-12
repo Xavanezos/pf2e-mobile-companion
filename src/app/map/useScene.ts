@@ -20,6 +20,7 @@ export function useScene(actorId: string | null): SceneView | null {
   useFoundryHook("deleteScene", onChange);
   useFoundryHook("updateActor", onChange);
   useFoundryHook("updateCombat", onChange);
+  useFoundryHook("targetToken", onChange);
 
   return useMemo(() => {
     const scene = (game as any)?.scenes?.active;
@@ -28,6 +29,7 @@ export function useScene(actorId: string | null): SceneView | null {
     const c = (game as any)?.combat?.combatant;
     const currentTokenId =
       c && c.sceneId === scene.id ? (c.tokenId ?? c.token?.id ?? null) : null;
+    const targetedIds = ((game as any)?.user?.targets?.ids ?? []) as string[];
     // Read the background from `_source` to avoid Foundry v14's deprecated
     // `Scene#background` getter (which warns on every render); the value is the
     // same. Tokens stay the live collection (the mapper handles `{ contents }`).
@@ -36,7 +38,7 @@ export function useScene(actorId: string | null): SceneView | null {
       background: { src: scene._source?.background?.src ?? scene.background?.src ?? null },
       tokens: scene.tokens,
     };
-    return buildSceneView(sceneArg, scene.dimensions, { isGM, characterActorId: actorId, currentTokenId });
+    return buildSceneView(sceneArg, scene.dimensions, { isGM, characterActorId: actorId, currentTokenId, targetedIds });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version, actorId]);
 }

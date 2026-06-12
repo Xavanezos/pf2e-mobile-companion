@@ -48,6 +48,12 @@ export function TokenSprite({
           </span>
         )}
       </div>
+      {token.targeted && (
+        <div className="pointer-events-none absolute -inset-1">
+          <div className="h-full w-full rounded-sm ring-2 ring-red-500" />
+          <i className="fas fa-crosshairs absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-red-500" aria-hidden="true" />
+        </div>
+      )}
       {token.hp && (
         <div className="pointer-events-none absolute inset-x-[5%] -bottom-1 h-1.5 overflow-hidden rounded-full bg-zinc-900/80">
           <div className={`h-full ${hpColor}`} style={{ width: `${hpPct}%` }} />

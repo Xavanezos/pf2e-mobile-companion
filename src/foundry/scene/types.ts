@@ -24,6 +24,7 @@ export interface TokenView {
   height: number;                // px (grid units × size)
   isMine: boolean;               // active character owns the actor → draggable
   isCurrent: boolean;            // current combatant's token → turn ring
+  targeted: boolean;             // in the user's target set → reticle
   hidden: boolean;               // GM-hidden (only listed for the GM; rendered dimmed)
   disposition: number;           // CONST.TOKEN_DISPOSITIONS (-2 secret … 1 friendly)
   hp: { value: number; max: number } | null; // null when the viewer may not see it
@@ -43,6 +44,7 @@ export interface SceneViewContext {
   isGM: boolean;
   characterActorId: string | null;
   currentTokenId: string | null; // game.combat?.combatant?.tokenId on this scene
+  targetedIds: string[];         // game.user.targets.ids → which tokens show a reticle
 }
 
 // ---------- Source (the live documents, structurally) ----------

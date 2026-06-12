@@ -1,4 +1,5 @@
 import { Modal } from "../sheet/parts/Modal";
+import { toggleTarget } from "../../foundry/scene/targeting";
 import type { TokenView } from "../../foundry/scene/types";
 
 const DISPO_LABEL: Record<number, string> = {
@@ -46,6 +47,13 @@ export function TokenInfoPopup({ token, onClose }: { token: TokenView; onClose: 
           )}
         </div>
       </div>
+      <button
+        onClick={() => toggleTarget(token.id)}
+        className={`mt-4 flex w-full items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-white ${token.targeted ? "bg-red-600" : "bg-indigo-600"}`}
+      >
+        <i className="fas fa-crosshairs" aria-hidden="true" />
+        {token.targeted ? "Untarget" : "Target"}
+      </button>
     </Modal>
   );
 }

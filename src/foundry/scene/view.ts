@@ -14,6 +14,7 @@ export function buildSceneView(
   ctx: SceneViewContext,
 ): SceneView {
   const raw: TokenLike[] = Array.isArray(scene.tokens) ? scene.tokens : scene.tokens?.contents ?? [];
+  const targeted = new Set(ctx.targetedIds);
   const tokens: TokenView[] = [];
 
   for (const t of raw) {
@@ -38,6 +39,7 @@ export function buildSceneView(
       height: t.height * dims.size,
       isMine,
       isCurrent: t.id === ctx.currentTokenId,
+      targeted: targeted.has(t.id),
       hidden: t.hidden,
       disposition: t.disposition ?? 0,
       hp,

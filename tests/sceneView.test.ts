@@ -15,8 +15,8 @@ function scene(tokens: TokenLike[], over: Partial<SceneLike> = {}): SceneLike {
   return { id: "s1", background: { src: "bg.webp" }, tokens, ...over };
 }
 const DIMS: SceneDimensionsLike = { width: 4500, height: 3500, size: 100, sceneX: 250, sceneY: 250, sceneWidth: 4000, sceneHeight: 3000 };
-const PLAYER: SceneViewContext = { isGM: false, characterActorId: "hero", currentTokenId: null };
-const GM: SceneViewContext = { isGM: true, characterActorId: null, currentTokenId: null };
+const PLAYER: SceneViewContext = { isGM: false, characterActorId: "hero", currentTokenId: null, targetedIds: [] };
+const GM: SceneViewContext = { isGM: true, characterActorId: null, currentTokenId: null, targetedIds: [] };
 
 describe("buildSceneView", () => {
   it("maps fields and converts grid units to px", () => {
@@ -55,9 +55,15 @@ describe("buildSceneView", () => {
 
   it("flags isMine and isCurrent", () => {
     const ts = [token({ id: "c1", actor: { id: "hero", hasPlayerOwner: true } }), token({ id: "c2", actor: { id: "foe" } })];
-    const v = buildSceneView(scene(ts), DIMS, { isGM: false, characterActorId: "hero", currentTokenId: "c1" });
+    const v = buildSceneView(scene(ts), DIMS, { isGM: false, characterActorId: "hero", currentTokenId: "c1", targetedIds: [] });
     expect(v.tokens[0]).toMatchObject({ isMine: true, isCurrent: true });
     expect(v.tokens[1]).toMatchObject({ isMine: false, isCurrent: false });
+  });
+
+  it("flags targeted tokens from targetedIds", () => {
+    const ts = [token({ id: "t1" }), token({ id: "t2" })];
+    const v = buildSceneView(scene(ts), DIMS, { ...GM, targetedIds: ["t2"] });
+    expect(v.tokens.map((t) => t.targeted)).toEqual([false, true]);
   });
 
   it("accepts scene.tokens as an array or a {contents} collection", () => {
