@@ -3,10 +3,11 @@ import { executeMacro } from "../src/foundry/macros/hotbar";
 
 interface Exec { scope: unknown; }
 
-/** Stub the Foundry globals. `opts.macro/actor === false` makes that lookup miss. */
-function stub(opts: { macro?: boolean; actor?: boolean } = {}) {
+/** Stub the Foundry globals. `opts.macro/actor === false` makes that lookup miss;
+ *  `opts.token` gives the actor an active Token placeable on the viewed scene. */
+function stub(opts: { macro?: boolean; actor?: boolean; token?: object } = {}) {
   const execs: Exec[] = [];
-  const actor = { id: "a1", name: "Ezren" };
+  const actor = { id: "a1", name: "Ezren", getActiveTokens: () => (opts.token ? [opts.token] : []) };
   const macro = { execute: (scope: unknown) => { execs.push({ scope }); return Promise.resolve(true); } };
   (globalThis as { game?: unknown }).game = {
     macros: { get: () => (opts.macro === false ? undefined : macro) },
@@ -23,6 +24,14 @@ describe("executeMacro", () => {
     await executeMacro("m1", "a1");
     expect(execs).toHaveLength(1);
     expect((execs[0].scope as { actor?: unknown }).actor).toBe(actor);
+  });
+
+  it("also passes the actor's active token when one is on the viewed scene", async () => {
+    const token = { id: "t1" };
+    const { execs, actor } = stub({ token });
+    await executeMacro("m1", "a1");
+    expect((execs[0].scope as { actor?: unknown }).actor).toBe(actor);
+    expect((execs[0].scope as { token?: unknown }).token).toBe(token);
   });
 
   it("executes with empty scope when no actor id is given", async () => {

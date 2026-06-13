@@ -26,19 +26,26 @@ export function buildHotbarView(
   return out;
 }
 
-interface ExecutableMacro { execute(scope?: { actor?: unknown }): unknown; }
+interface ExecutableMacro { execute(scope?: { actor?: unknown; token?: unknown }): unknown; }
+interface TokenedActor { getActiveTokens?: () => unknown[]; }
 
-/** Guarded: run a hotbar macro exactly like clicking the desktop hotbar, passing
- *  the app's active actor as scope so actor-aware macros work without a canvas
- *  selection. No `token` is passed — mobile (canvas-off) has no Token placeable
- *  until Phase 7. Never throws into React; a failure surfaces via Foundry's toast. */
+/** Guarded: run a hotbar macro exactly like clicking the desktop hotbar. Passes
+ *  the app's active actor as scope, plus its active Token placeable when one is on
+ *  the viewed scene — the Map tab (which hosts the bar) keeps the canvas live, so
+ *  script macros that read the `token` param / `canvas.tokens.controlled` resolve
+ *  it. Falls back to actor-only, then empty, when absent. Never throws into React;
+ *  a failure surfaces via Foundry's toast. */
 export function executeMacro(macroId: string, actorId: string | null): Promise<void> {
   return (async () => {
     try {
       const macro = (game as any)?.macros?.get(macroId) as ExecutableMacro | undefined;
       if (!macro?.execute) throw new Error(`macro ${macroId} not executable`);
-      const actor = actorId ? (game as any)?.actors?.get(actorId) : undefined;
-      await macro.execute(actor ? { actor } : {});
+      const actor = actorId ? ((game as any)?.actors?.get(actorId) as TokenedActor | undefined) : undefined;
+      const token = actor?.getActiveTokens?.()?.[0];
+      const scope: { actor?: unknown; token?: unknown } = {};
+      if (actor) scope.actor = actor;
+      if (token) scope.token = token;
+      await macro.execute(scope);
     } catch (err) {
       console.error("[pf2e-mobile] executeMacro failed", err);
       (ui as any)?.notifications?.error?.("Macro failed — see console.");
