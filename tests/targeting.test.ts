@@ -23,7 +23,26 @@ function stub() {
     scenes: { active: { id: "s1", tokens: { get: (id: string) => tokens.get(id) } } },
   };
   (globalThis as { ui?: unknown }).ui = { notifications: { error: () => {} } };
+  (globalThis as { canvas?: unknown }).canvas = undefined; // lite/no-canvas path
   return { calls, user };
+}
+
+/** Canvas-ready stub: tokens expose a `.object` placeable whose `setTarget` we record. */
+function stubCanvas() {
+  const calls: Array<{ id: string; on: boolean }> = [];
+  const mk = (id: string) => {
+    const object = { id, setTarget: (on: boolean) => calls.push({ id, on }) };
+    return { id, object };
+  };
+  const tokens = new Map<string, any>([["a", mk("a")], ["b", mk("b")]]);
+  const user = { targets: new FakeTargets(), broadcastActivity: () => {} };
+  (globalThis as { game?: unknown }).game = {
+    user,
+    scenes: { active: { id: "s1", tokens: { get: (id: string) => tokens.get(id) } } },
+  };
+  (globalThis as { ui?: unknown }).ui = { notifications: { error: () => {} } };
+  (globalThis as { canvas?: unknown }).canvas = { ready: true };
+  return { calls, user, tokens };
 }
 
 describe("targeting", () => {
@@ -56,5 +75,24 @@ describe("targeting", () => {
     clearTargets();
     expect(getTargetIds()).toEqual([]);
     expect(calls.broadcasts.at(-1)).toEqual({ sceneId: "s1", targets: [] });
+  });
+
+  // Regression for the live crash: with a real canvas, a fake stand-in in
+  // game.user.targets kills the native reticle render loop. Canvas mode must use
+  // the native Token#setTarget on the real placeable and never add a stand-in.
+  it("canvas mode: targets via native setTarget on the placeable, never a stand-in", () => {
+    const { calls, user } = stubCanvas();
+    setTargets(["a"]);
+    expect(calls).toEqual([{ id: "a", on: true }]);
+    expect([...user.targets]).toEqual([]); // no fake stand-in added to the set
+  });
+
+  it("canvas mode: clearTargets untargets each targeted placeable natively", () => {
+    const { calls, user, tokens } = stubCanvas();
+    user.targets.add(tokens.get("a").object);
+    user.targets.add(tokens.get("b").object);
+    calls.length = 0;
+    clearTargets();
+    expect(calls).toEqual([{ id: "a", on: false }, { id: "b", on: false }]);
   });
 });

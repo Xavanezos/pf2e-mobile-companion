@@ -1,8 +1,16 @@
-// Mobile (no-canvas) token targeting for Foundry v14 + PF2e v8.2.
+// Token targeting for Foundry v14 + PF2e v8.2, in BOTH map modes.
 //
-// Foundry's public targeting API (Token#setTarget / TokenLayer#setTargets) is
-// canvas-bound and no-ops with `noCanvas` on. We drive the two canvas-FREE
-// primitives directly instead (both source-verified against Foundry 14.364):
+// Canvas mode (real `#board` up): we drive Foundry's NATIVE `Token#setTarget` on
+// the live placeable. It sets `token.targeted`, draws the reticle, and broadcasts
+// — and crucially puts REAL `Token` objects in `game.user.targets`. Adding a fake
+// stand-in there instead crashes the canvas's native reticle render loop (it runs
+// in the PIXI ticker, outside any try/catch, and dereferences `.object` / PIXI
+// internals on each target). The `sceneId` handshake below is unneeded here: in
+// canvas mode our `viewedScene` is set, so the GM honors the broadcast.
+//
+// Lite / no-canvas mode: `setTarget` no-ops (it's canvas-bound) and there is no
+// placeable, so we drive the two canvas-FREE primitives directly (both
+// source-verified against Foundry 14.364):
 //   • game.user.targets.add/delete/clear — pure Set ops + a `targetToken` hook.
 //     Populating this makes strikes/spells rolled FROM mobile resolve vs the
 //     target's AC: PF2e reads only `target.document` / `target.actor` (actor data),
@@ -11,6 +19,8 @@
 //     GM's canvas turns the broadcast token ids into reticles. The `sceneId` is
 //     MANDATORY: without it the GM clears our targets (our `viewedScene` stays
 //     null on its copy → users.mjs scene-match guard).
+
+import { isCanvasReady } from "../canvas/lifecycle";
 
 interface TokenStandIn {
   id: string;
@@ -55,8 +65,21 @@ export function setTargets(tokenIds: string[]): void {
     const scene = activeScene();
     if (!user?.targets || !scene) return;
     const desired = new Set(tokenIds.filter((id) => scene.tokens?.get(id)));
-    const targets = user.targets as Set<any> & { add(x: unknown): unknown; delete(x: unknown): boolean };
 
+    // Canvas mode: native setTarget on the real placeables (reticle + broadcast).
+    // Putting a stand-in in game.user.targets here would crash the reticle loop.
+    if (isCanvasReady()) {
+      for (const t of Array.from(user.targets as Set<any>)) {
+        if (!desired.has((t as any).id)) (t as any).setTarget?.(false, { releaseOthers: false });
+      }
+      for (const id of desired) {
+        scene.tokens?.get(id)?.object?.setTarget?.(true, { releaseOthers: false });
+      }
+      return;
+    }
+
+    // Lite / no-canvas: drive the canvas-free primitives with a stand-in.
+    const targets = user.targets as Set<any> & { add(x: unknown): unknown; delete(x: unknown): boolean };
     // Remove stale targets (delete = Set.delete + targetToken hook).
     for (const existing of Array.from(targets)) {
       if (!desired.has((existing as any).id)) targets.delete(existing);
@@ -87,6 +110,13 @@ export function clearTargets(): void {
   guard(() => {
     const user = (game as any)?.user;
     if (!user?.targets) return;
+    // Canvas mode: untarget each real placeable (clears its reticle + broadcasts).
+    if (isCanvasReady()) {
+      for (const t of Array.from(user.targets as Set<any>)) {
+        (t as any).setTarget?.(false, { releaseOthers: false });
+      }
+      return;
+    }
     (user.targets as any).clear?.();
     user.broadcastActivity?.({ sceneId: activeScene()?.id ?? null, targets: [] });
   });
