@@ -1,5 +1,5 @@
 import { registerSettings, isMobileActive } from "./foundry/settings";
-import { applyTakeover, removeTakeover, isTakeoverActive, reconcileMapRenderer } from "./foundry/takeover";
+import { applyTakeover, reconcileMapRenderer } from "./foundry/takeover";
 import { installStrikeRollDialogHook } from "./foundry/actor/strikeActions";
 
 const MODULE_ID = "pf2e-mobile-companion";
@@ -8,12 +8,8 @@ const MODULE_ID = "pf2e-mobile-companion";
 // Foundry fires `init`.
 Hooks.once("init", () => {
   console.log(`${MODULE_ID} | init`);
-  registerSettings(
-    () => { void onUiModeChange(); },
-    () => { void reconcileMapRenderer(); },
-  );
+  registerSettings(() => { void reconcileMapRenderer(); });
 });
-
 
 Hooks.once("ready", async () => {
   if (!isMobileActive()) {
@@ -25,19 +21,6 @@ Hooks.once("ready", async () => {
   await installReactRefreshPreamble();
   await applyTakeover(mountApp);
 });
-
-/** Re-evaluate when the user flips the UI-mode setting at runtime. */
-async function onUiModeChange(): Promise<void> {
-  const shouldBeMobile = isMobileActive();
-  const active = isTakeoverActive();
-  if (shouldBeMobile && !active) {
-    installStrikeRollDialogHook();
-    await installReactRefreshPreamble();
-    await applyTakeover(mountApp);
-  } else if (!shouldBeMobile && active) {
-    await removeTakeover();
-  }
-}
 
 /** Lazily import React + the app (kept out of static imports so the dev Fast
  *  Refresh preamble is installed first). */
