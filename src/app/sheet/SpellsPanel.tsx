@@ -18,7 +18,7 @@ const SECTIONS: { id: Section; label: string }[] = [
 ];
 
 /** The Spells sub-tab — mirrors PF2e's Spellcasting tab: a segmented control over
- *  Known Spells / Rituals / Activations. (Rituals + Activations land in Slice B.) */
+ *  Known Spells / Rituals / Activations. */
 export function SpellsPanel({ actorId }: { actorId: string }) {
   const view = useSpells(actorId);
   const [section, setSection] = useState<Section>("known");

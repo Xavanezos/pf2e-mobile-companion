@@ -8,8 +8,8 @@ export interface BreakdownRequest { title: string; total: number; parts: ModPart
 
 const sign = (n: number) => `${n >= 0 ? "+" : ""}${n}`;
 
-/** Read-only modifier breakdown (#5). `onRoll` is the Phase-3 seam: when the
- *  rolling phase supplies it, a Roll button appears; omitted now → display-only. */
+/** Read-only modifier breakdown. `onRoll` when supplied shows a Roll button;
+ *  omitted renders display-only. */
 export function BreakdownModal({ req, onClose, onRoll }: {
   req: BreakdownRequest;
   onClose: () => void;

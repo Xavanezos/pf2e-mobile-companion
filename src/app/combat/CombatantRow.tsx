@@ -3,7 +3,7 @@ import type { CombatantView } from "../../foundry/combat/types";
 /** One row in the initiative order: portrait, name, initiative, and an HP bar
  *  when the viewer may see it. The current-turn row is ringed with a ▶ marker;
  *  the active character's own row is tagged "You"; defeated rows are dimmed and
- *  struck. Non-interactive for v1 (tap-for-detail is Phase 7). Uses bg/ring, not
+ *  struck. Non-interactive. Uses bg/ring, not
  *  `border`, per the Tailwind-v4 reset gotchas. */
 export function CombatantRow({ c }: { c: CombatantView }) {
   const hpPct = c.hp && c.hp.max > 0 ? Math.max(0, Math.min(100, (c.hp.value / c.hp.max) * 100)) : 0;

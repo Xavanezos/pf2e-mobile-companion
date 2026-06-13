@@ -7,9 +7,9 @@ import { executeMacro } from "../../foundry/macros/hotbar";
 import { getMapRenderer } from "../../foundry/settings";
 import { isCanvasReady } from "../../foundry/canvas/lifecycle";
 
-/** The Map tab: the battle map fills the `flex-1` area; the macro bar (Phase 4.1)
- *  stays pinned at the bottom. Uses the real Foundry canvas when the renderer
- *  setting is `canvas` and the canvas initialized; otherwise the lite DOM map. */
+/** The Map tab: the battle map fills the `flex-1` area; the macro bar stays pinned
+ *  at the bottom. Uses the real Foundry canvas when the renderer setting is `canvas`
+ *  and the canvas initialized; otherwise the lite DOM map. */
 export function MapTab() {
   const actorId = useAppStore((s) => s.actorId);
   const macros = useHotbar();

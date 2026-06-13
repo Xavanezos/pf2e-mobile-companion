@@ -11,7 +11,7 @@ function readItem(actorId: string, itemId: string): ItemDetailView | null {
   return item ? buildItemDetail(item as ItemDetailLike) : null;
 }
 
-/** Tap-for-info popup (#3): feats / items / effects. Reads the live item lazily
+/** Tap-for-info popup: feats / items / effects. Reads the live item lazily
  *  and enriches its description best-effort (raw fallback). Read-only. */
 export function DetailModal({ actorId, itemId, onClose }: {
   actorId: string;
