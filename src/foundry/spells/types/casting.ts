@@ -1,5 +1,5 @@
-// View + source shapes for the Spells sub-tab (Phase 3 spells). The view is what
-// the UI renders; the *Like shapes are the structural slice of the live PF2e
+// View + source shapes for spellcasting entries. The view is what the UI
+// renders; the *Like shapes are the structural slice of the live PF2e
 // spellcasting data the mappers read (the real SpellcastingSheetData satisfies
 // SpellcastingSheetDataLike via `as unknown as`).
 
@@ -60,8 +60,6 @@ export interface SpellsView {
   focus: { value: number; max: number } | null;
 }
 
-// ---------- source-like (only the members the mappers read) ----------
-
 export interface SpellLike {
   id: string;
   name: string;
@@ -120,67 +118,4 @@ export interface ActivationItemLike {
   name: string;
   img?: string;
   system?: { spell?: { name?: string } | null; uses?: { value?: number; max?: number } };
-}
-
-// ---------- spell detail (tap-for-info popup) ----------
-
-export interface SpellDetailView {
-  name: string;
-  img?: string;
-  rank: number;
-  glyph: string | null;
-  traits: string[];
-  meta: { label: string; value: string }[];
-  descriptionHtml: string;
-}
-export interface SpellDetailLike {
-  name: string;
-  img?: string;
-  system?: {
-    level?: { value?: number };
-    traits?: { value?: string[]; rarity?: string; traditions?: string[] };
-    time?: { value?: string };
-    range?: { value?: string };
-    area?: { type?: string; value?: number } | null;
-    target?: { value?: string };
-    duration?: { value?: string };
-    defense?: { save?: { statistic?: string; basic?: boolean } } | null;
-    description?: { value?: string };
-  };
-}
-
-// ---------- spellbook (prepare / manage known) ----------
-
-export interface SpellbookOptionView {
-  id: string;
-  name: string;
-  glyph: string | null;
-  signature?: boolean;
-}
-export interface SpellbookSlotView {
-  slotIndex: number;
-  spell: { id: string; name: string; glyph: string | null } | null;
-}
-export interface SpellbookRankView {
-  id: string;
-  rank: number;
-  label: string;
-  /** Prepared casters: the slots to fill. Spontaneous: empty. */
-  slots: SpellbookSlotView[];
-  /** Prepared: spells available to prepare at this rank. Spontaneous: repertoire. */
-  known: SpellbookOptionView[];
-}
-export interface SpellbookView {
-  entryId: string;
-  kind: "prepared" | "spontaneous";
-  ranks: SpellbookRankView[];
-}
-
-/** A spell from the entry's collection (the "book") for the prepare picker. */
-export interface SpellbookSourceLike {
-  id: string;
-  name: string;
-  rank?: number;
-  isCantrip?: boolean;
-  system?: { time?: { value?: string } };
 }
