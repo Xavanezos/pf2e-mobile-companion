@@ -1,4 +1,3 @@
-// src/app/map/CanvasMap.tsx
 import { useCallback, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
 import { useAppStore } from "../store";
@@ -12,42 +11,11 @@ import { clearTargets } from "../../foundry/scene/targeting";
 import { releaseControlledTokens, toggleDoorAt } from "../../foundry/canvas/control";
 import { snapToCenter, snapTopLeft, measureDistance, type GridSpec, type Point } from "../../foundry/scene/ruler";
 import { useFoundryHook } from "../useFoundryHook";
+import { liveCanvas, readPan, applyPan, screenCenter, worldAt, screenAt } from "./canvasAccess";
 
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 4;
 const TAP_SLOP = 6;
-
-function liveCanvas(): any {
-  return (globalThis as any).canvas ?? null;
-}
-/** Current canvas pan center (world) + scale, or null if the canvas isn't ready. */
-function readPan(): { x: number; y: number; scale: number } | null {
-  const cv = liveCanvas();
-  if (!cv?.ready) return null;
-  return { x: cv.stage.pivot.x, y: cv.stage.pivot.y, scale: cv.stage.scale.x };
-}
-function applyPan(p: { x: number; y: number; scale: number }): void {
-  liveCanvas()?.pan?.(p);
-}
-function screenCenter(): { x: number; y: number } {
-  return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-}
-/** Screen (client px) → world (scene px) via the stage transform; null if off. */
-function worldAt(clientX: number, clientY: number): { x: number; y: number } | null {
-  const cv = liveCanvas();
-  if (!cv?.ready) return null;
-  const P = (globalThis as any).PIXI?.Point;
-  const local = cv.stage.toLocal(P ? new P(clientX, clientY) : { x: clientX, y: clientY });
-  return { x: local.x, y: local.y };
-}
-/** World (scene px) → screen (client px) via the stage transform; null if off. */
-function screenAt(worldX: number, worldY: number): { x: number; y: number } | null {
-  const cv = liveCanvas();
-  if (!cv?.ready) return null;
-  const P = (globalThis as any).PIXI?.Point;
-  const g = cv.stage.toGlobal(P ? new P(worldX, worldY) : { x: worldX, y: worldY });
-  return { x: g.x, y: g.y };
-}
 
 interface PressState {
   pointerId: number;

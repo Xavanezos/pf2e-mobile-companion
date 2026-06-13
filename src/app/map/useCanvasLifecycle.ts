@@ -1,4 +1,3 @@
-// src/app/map/useCanvasLifecycle.ts
 import { useEffect } from "react";
 import { resumeCanvas, pauseCanvas, viewActiveScene, fitActiveScene } from "../../foundry/canvas/lifecycle";
 
