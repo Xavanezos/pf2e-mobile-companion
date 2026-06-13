@@ -8,6 +8,20 @@ A Foundry VTT module that replaces the Foundry UI on mobile Chrome with a fast, 
 
 > **Build order (revised 2026-06-12):** Phase 5 is done. **Journals (Phase 6) is deferred to the end of the roadmap** (lowest priority — its full section now lives at the bottom of this file). The **battle map (Phase 7) is built next**, then Journals. Phase numbers are kept stable as identifiers (historical reports reference "Phase 6 = Journals", "Phase 7 = battle map"); only the *order of work* changed.
 
+## Current status — 2026-06-13
+
+**Core is feature-complete.** Phases 0–7 are code-complete on `main`; 260 tests + typecheck + prod build green. Everything routes through the live PF2e system API, and the Map tab renders the **real Foundry canvas** — so third-party modules (hotbar macros, canvas effects, system automation) work without neutralization (Phase 8b dropped, below).
+
+Remaining work, by bucket:
+
+- **A — In-flight:** land the uncommitted Map bug-fix round (door toggle + `control.ts`, canvas-mode targeting, drag-start origin). Tests green; needs one device pass, then commit.
+- **B — Play-test backlog (code-complete, unblessed):** battle map (ruler / hex grid / padded scene / GM-vs-AC), journals (only empty-state seen), map token conditions/effects, chat-roll long-press menu (reroll/delete), device-only activation.
+- **C — Deferred features (optional):** common-actions row (`game.pf2e.actions`); damage-apply buttons on chat cards (may already work via rendered HTML — live-check); learn/add spells from the compendium.
+- **D — Phase 8 hardening (only to publish):** reconnection overlay on screen-lock, debounce `updateToken` in big combats, `React.lazy` tab split, profile on real Android, settings polish (default tab / vibration / font size), tighten `module.json` pinning, GitHub release + manifest URL.
+- **E — Descoped:** Phase 8b module neutralization — unnecessary now the canvas renders.
+
+> Per-phase specs, plans, and reports were archived to `docs/archive/` on 2026-06-13; this file is the living roadmap.
+
 ---
 
 ## Phase 0 — Dev environment & scaffold
@@ -112,7 +126,7 @@ This is the heart of it. Everything goes through the system so rule elements, yo
 - [x] **Read the hotbar:** pure `buildHotbarView(game.user)` — flatten `game.user.hotbar` (`Record<slot, macroId>`) across all 5 pages in slot order, resolve `game.macros.get(id)`, skip dangling → `MacroButtonView { id, slot, name, img, canExecute }`. (`src/foundry/macros/{types,hotbar}.ts`)
 - [x] **Render the bar:** `MacroBar` — pinned `overflow-x-auto` strip of icon + tiny-name buttons; empty-state hint; dimmed/disabled when `canExecute === false`. (`src/app/macros/MacroBar.tsx`)
 - [x] **Host on the Map tab:** new `MapTab` (`flex flex-col h-full`: map area `flex-1` [Phase-7 placeholder for now] + `<MacroBar>` pinned `shrink-0`); route `"map"` → `<MapTab />` in `TabContent`.
-- [x] **Execute:** guarded `executeMacro(macroId, actorId)` → `macro.execute({ actor })` (active actor as scope; token omitted — no canvas until Phase 7). Chat macros post to the existing chat feed; failures → Foundry toast.
+- [x] **Execute:** guarded `executeMacro(macroId, actorId)` → `macro.execute({ actor, token })` (active actor + its active Token placeable, now the canvas renders; token-aware macros resolve `canvas.tokens.controlled` / the `token` param). Chat macros post to the existing chat feed; failures → Foundry toast. *(token scope added 2026-06-13.)*
 - [x] **Live + tests:** `useHotbar` re-preps on `updateUser`/`updateMacro`/`deleteMacro`; Vitest for the pure mapper (slot order, dangling-skip, empty → `[]`); typecheck + prod build; manual live checklist (Player1 @ mobile width, hotbar with a chat macro + a script/actor macro).
 
 **Milestone:** ✅ player taps a macro on the Map tab and it executes identically to desktop.
@@ -140,7 +154,9 @@ This is the heart of it. Everything goes through the system so rule elements, yo
 
 ---
 
-## Phase 7 — Lightweight battle map
+## Phase 7 — Lightweight battle map · **code-complete on `main` (2026-06-13)**
+
+> **Shipped beyond the original plan:** the Map tab now renders the **real Foundry PIXI canvas** (walls/lighting/fog/vision) with a transparent React input layer driving pan/zoom, token drag→`moveToken`, token **targeting**, a **ruler** tool, **door** control, and token **conditions/effects** popups. The "custom renderer" sketch below was superseded by reusing the live canvas. Pending your play-test (bucket B).
 
 Custom renderer, not the PIXI canvas. Goal: situational awareness + moving your token, not full fidelity.
 
@@ -167,7 +183,9 @@ Custom renderer, not the PIXI canvas. Goal: situational awareness + moving your 
 
 ---
 
-## Phase 8b — Neutralizing other modules on mobile
+## Phase 8b — Neutralizing other modules on mobile · **DESCOPED (2026-06-13)**
+
+> **No longer needed.** The Map tab renders the real Foundry canvas, so canvas-rendering modules (Sequencer / JB2A / Automated Animations / lighting) run normally instead of erroring on a missing `canvas`, and system-automation modules hook the live PF2e API regardless of UI. Hotbar macros — including module-added ones — run via the Map-tab macro bar with `{ actor, token }` scope. Nothing to neutralize. The original plan is kept below for reference only.
 
 Foundry's module list is world-level, so you can't disable a module per-client — but you can neutralize them on the mobile client:
 
