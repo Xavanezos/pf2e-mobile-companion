@@ -3,8 +3,7 @@
  *
  *  `message.renderHTML()` builds the card; PF2e binds chat-card listeners on the
  *  `renderChatMessageHTML` hook, which the stock sidebar fires but we must emit
- *  ourselves for elements we mount. Whether that wires the damage buttons is the
- *  Slice-1 spike (Task 8). */
+ *  ourselves for elements we mount. */
 export async function renderMessageElement(messageId: string): Promise<HTMLElement | null> {
   try {
     const msg = (game as any)?.messages?.get(messageId);

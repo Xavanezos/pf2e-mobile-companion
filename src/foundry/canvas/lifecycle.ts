@@ -1,5 +1,3 @@
-// src/foundry/canvas/lifecycle.ts
-//
 // The ONLY module that touches the live `canvas`. Drives the Foundry PIXI canvas
 // for the Map tab: show/hide + pause/resume its render loop, view the active
 // scene, fit it to the viewport. Every function no-ops safely when the canvas is

@@ -56,8 +56,6 @@ export interface SceneViewContext {
   targetedIds: string[];         // game.user.targets.ids → which tokens show a reticle
 }
 
-// ---------- Source (the live documents, structurally) ----------
-
 /** A live TokenDocumentPF2e — only the fields the mapper reads. */
 export interface TokenLike {
   id: string;

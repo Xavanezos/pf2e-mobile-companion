@@ -35,7 +35,8 @@ export interface EntryView {
   pages: PageView[];
 }
 
-// ---- pre-filtered structural inputs (the hook computes `visible` from live docs) ----
+// Pre-filtered structural inputs: the hook computes `visible` from live docs before
+// passing these to the pure mapper.
 
 export interface JournalEntryLike {
   id: string;

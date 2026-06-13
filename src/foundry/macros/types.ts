@@ -11,8 +11,6 @@ export interface MacroButtonView {
 }
 export type HotbarView = MacroButtonView[];
 
-// ---------- Source (the live documents, structurally) ----------
-
 /** The live User — only the hotbar record the mapper reads.
  *  `game.user.hotbar` is `Record<number, string>` (slot 1–50 → macro id). */
 export interface HotbarUserLike {

@@ -1,4 +1,3 @@
-// src/foundry/canvas/hitTest.ts
 // Pure: topmost visible token whose AABB contains a world point. Plus a thin live
 // wrapper that reads `canvas.tokens.placeables` and converts a screen point to
 // world coords via the stage transform.

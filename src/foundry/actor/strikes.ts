@@ -32,7 +32,7 @@ function mapAmmo(s: StrikeLike): StrikeView["ammo"] {
  *  index on each kept strike (the action layer re-reads the live strike by it),
  *  filters to real strikes (`type === "strike"` with a non-empty variants array),
  *  and never retains the live roll/damage callbacks (only `hasDamage`/`hasCritical`
- *  flags). Defensive over PF2e's shape. */
+ *  flags). Guards against missing/optional fields in PF2e's shape. */
 export function buildStrikesView(actor: StrikeActorLike): StrikesView {
   const actions = actor.system?.actions ?? [];
   const views: StrikeView[] = [];

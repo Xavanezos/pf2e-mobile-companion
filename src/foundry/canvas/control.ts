@@ -1,5 +1,3 @@
-// src/foundry/canvas/control.ts
-//
 // Canvas control actions the Map tab's input layer needs but the native canvas
 // never receives (our transparent overlay eats every pointer event): releasing
 // the token selection, and operating doors. All no-op safely off-canvas (lite

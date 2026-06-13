@@ -20,7 +20,6 @@ export interface ChatView {
   isOwn: boolean;
 }
 
-// ---------- Source (the live ChatMessage, structurally) ----------
 // The real ChatMessagePF2e satisfies this via `msg as unknown as ChatMessageLike`.
 
 export interface ChatMessageLike {

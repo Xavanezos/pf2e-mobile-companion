@@ -29,8 +29,6 @@ export interface EncounterViewContext {
   characterActorId: string | null;
 }
 
-// ---------- Source (the live documents, structurally) ----------
-
 /** A live CombatantPF2e — only the fields the mapper reads. */
 export interface CombatantLike {
   id: string;

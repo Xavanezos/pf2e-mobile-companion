@@ -58,7 +58,7 @@ function showDialogEvent(setting: "showCheckDialogs"): Dict {
   return { event: new PointerEvent("click", { shiftKey: !show }) };
 }
 
-// ---- Attack modifier toggle (A.2b), applied post-clone ----
+// Attack modifier toggle — applied post-clone.
 // The toggle must reach the FINAL CheckModifier. When a target is selected the strike
 // roll re-derives its modifiers on a contextual actor clone (PF2e's `getContextualClone`
 // re-runs data prep from `_source`), so a transient `.ignored` set on the LIVE strike is

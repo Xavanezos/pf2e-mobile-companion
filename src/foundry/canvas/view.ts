@@ -1,4 +1,3 @@
-// src/foundry/canvas/view.ts
 // Pure pan/zoom math for driving Foundry's `canvas.pan({x,y,scale})`. `(x,y)` is
 // the world (scene-px) point the view centers on; `scale` is zoom. The canvas
 // projects a world point `w` to screen as `(w - pivot) * scale + screenCenter`,

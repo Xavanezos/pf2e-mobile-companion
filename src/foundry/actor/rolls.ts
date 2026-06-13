@@ -1,6 +1,6 @@
 /** Live PF2e statistic rolls. Thin glue over the system API, guarded so a
  *  rejected roll surfaces via Foundry's toast and never throws into React —
- *  same contract as `mutations.ts`. The modifier dialog is skipped for v1
+ *  same contract as `mutations.ts`. The modifier dialog is skipped
  *  (`skipDialog: true`); the breakdown popup already shows the math. */
 
 interface Statistic { roll(args?: Record<string, unknown>): Promise<unknown>; }
