@@ -4,10 +4,10 @@
 /** Proficiency rank: Untrained..Legendary. */
 export type Rank = 0 | 1 | 2 | 3 | 4;
 
-/** One line of a modifier breakdown popup (#5): "Proficiency +9". */
+/** One line of a modifier breakdown popup: "Proficiency +9". */
 export interface ModPartView { label: string; value: number; }
 
-// ---------- View (what the UI renders) ----------
+// Views — what the UI renders
 
 export interface HpView { value: number; temp: number; max: number; }
 export interface HeroPointsView { value: number; max: number; }
@@ -57,7 +57,7 @@ export interface SkillView { slug: string; label: string; mod: number; rank: Ran
 export interface ConditionView { slug: string; name: string; value: number | null; img?: string; locked: boolean; }
 export interface EffectView { id?: string; name: string; img?: string; badge: string | null; }
 
-/** Lazy detail for the tap-for-info popup (#3) — feats, items, effects. */
+/** Lazy detail for the tap-for-info popup — feats, items, effects. */
 export interface ItemDetailView {
   name: string;
   img?: string;
@@ -117,18 +117,18 @@ export interface CharacterView {
   bio: BioView;
 }
 
-// ---------- Source (the live actor, structurally) ----------
+// Source — the live actor, structurally
 // Only the members the mappers read. The real CharacterPF2e satisfies this
 // via `actor as unknown as CharacterLike` at the call site.
 
 export interface IwrLike { label: string; value?: number; }
-/** A live PF2e modifier (from a StatisticModifier/Statistic) for breakdowns (#5). */
+/** A live PF2e modifier (from a StatisticModifier/Statistic) for breakdowns. */
 export interface ModifierLike { label: string; modifier: number; enabled?: boolean; type?: string; }
 export interface SkillLike { slug: string; label: string; mod: number; rank: number; armor: boolean; lore?: boolean; modifiers?: ModifierLike[]; check?: { modifiers?: ModifierLike[] }; }
 export interface ConditionLike { slug: string; name: string; value: number | null; img?: string; isLocked?: boolean; }
 export interface EffectLike { id?: string; name: string; img?: string; badge?: { value?: number; label?: string } | null; unidentified?: boolean; }
 
-/** Live item read on demand for the detail popup (#3): feat | physical item | effect. */
+/** Live item read on demand for the detail popup: feat | physical item | effect. */
 export interface ItemDetailLike {
   name: string;
   img?: string;
@@ -223,115 +223,4 @@ export interface CharacterLike {
   background?: { name: string } | null;
   class?: { name: string } | null;
   deity?: { name: string } | null;
-}
-
-// ---------- Strikes (Phase 4) ----------
-
-/** One MAP option on a strike: `label` is PF2e's precomposed sign string
- *  ("+17" / "+12" / "+7"); `penalty` is 0 / -5 / -10. */
-export interface StrikeVariantView { label: string; penalty: number; }
-
-/** A strike auxiliary action (draw / sheathe / change grip / retrieve …). */
-export interface StrikeAuxView { label: string; glyph: string | null; }
-/** One row of the attack breakdown; `slug` identifies it for the A.2b toggle. */
-export interface StrikeModView { slug: string; label: string; value: number; enabled: boolean; }
-
-/** Ranged ammunition for a strike's `<select>`; null for melee/thrown weapons. */
-export interface StrikeAmmoView { options: { id: string; label: string }[]; selectedId: string | null; remaining: number; }
-
-/** Result of a live attack-modifier preview (A.2b): the grand total recomputed by
- *  PF2e's own stacking (incl. the MAP penalty), and the post-stacking modifier rows
- *  (with the user-disabled ones flipped to `enabled: false`). */
-export interface StrikeAttackPreview { total: number; parts: StrikeModView[]; }
-
-/** A single strike for the Actions tab. `index` is the position in
- *  `actor.system.actions` — the action layer re-reads the live strike by it. */
-export interface StrikeView {
-  index: number;
-  slug: string;
-  label: string;
-  img?: string;
-  ready: boolean;
-  glyph: string; // strikes are always a single action
-  traits: string[];
-  variants: StrikeVariantView[];
-  auxiliaryActions: StrikeAuxView[];
-  modifiers: StrikeModView[];
-  ammo: StrikeAmmoView | null;
-  hasDamage: boolean;
-  hasCritical: boolean;
-}
-
-export type StrikesView = StrikeView[];
-
-// ---------- Strikes source (the live actor, structurally) ----------
-
-export interface StrikeVariantLike { label?: string; penalty?: number; }
-export interface StrikeLike {
-  type?: string;
-  slug?: string;
-  label?: string;
-  ready?: boolean;
-  traits?: (string | { label?: string; name?: string })[];
-  variants?: StrikeVariantLike[];
-  /** Live roll callbacks — present (functions) on real strikes; read only as flags. */
-  damage?: unknown;
-  critical?: unknown;
-  auxiliaryActions?: { label?: string; glyph?: string }[];
-  modifiers?: { slug?: string; label?: string; modifier?: number; enabled?: boolean; ignored?: boolean; hideIfDisabled?: boolean }[];
-  selectedAmmoId?: string | null;
-  ammunition?: {
-    compatible?: { id: string; label: string }[];
-    selected?: { id: string } | null;
-    remaining?: number;
-  } | null;
-  item?: { img?: string };
-}
-export interface StrikeActorLike { system?: { actions?: StrikeLike[] }; }
-
-// ---------- Actions list (Phase 4 Slice B) ----------
-
-/** One action/activity row. `glyph` is an ActionGlyph code ("1"/"2"/"3"/"reaction"/"free") or null. */
-export interface ActionItemView {
-  id: string;
-  name: string;
-  img?: string;
-  glyph: string | null;
-  traits: string[];
-  frequency: { value: number; max: number; per: string } | null;
-}
-export interface ActionGroupView { key: string; label: string; actions: ActionItemView[]; }
-export type ActionsView = ActionGroupView[];
-
-/** Live action/feat item, structurally (read by the mapper). */
-export interface ActionItemLike {
-  id: string;
-  name: string;
-  img?: string;
-  type: string;
-  suppressed?: boolean;
-  system?: {
-    actionType?: { value?: string | null };
-    actions?: { value?: number | null };
-    traits?: { value?: string[] };
-    frequency?: { value?: number; max?: number; per?: string } | null;
-  };
-}
-export interface ActionsActorLike {
-  itemTypes?: { action?: ActionItemLike[]; feat?: ActionItemLike[] };
-  system?: { exploration?: string[] };
-}
-
-// ---------- Toggles (Phase 4 Slice B) ----------
-
-/** One combat roll-option toggle (Rage / Panache / stance …). */
-export interface ToggleView { domain: string; option: string; itemId: string; label: string; checked: boolean; enabled: boolean; }
-export type TogglesView = ToggleView[];
-
-export interface RollOptionToggleLike {
-  itemId?: string; label?: string; placement?: string; domain?: string; option?: string;
-  checked?: boolean; enabled?: boolean; alwaysActive?: boolean;
-}
-export interface TogglesActorLike {
-  synthetics?: { toggles?: Record<string, Record<string, RollOptionToggleLike>> };
 }
