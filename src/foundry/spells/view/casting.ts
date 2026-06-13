@@ -8,18 +8,11 @@ import type {
   SpellEntryView,
   SpellGroupLike,
   SpellLike,
-  SpellDetailLike,
-  SpellDetailView,
   SpellRankView,
   SpellRowView,
-  SpellbookOptionView,
-  SpellbookRankView,
-  SpellbookSlotView,
-  SpellbookSourceLike,
-  SpellbookView,
   SpellsView,
   SpellUsesView,
-} from "./types";
+} from "../types";
 
 /** Action-cost glyph for a spell from its cast time. Longer casts ("1 minute",
  *  rituals) carry no glyph — the row shows the time text instead. */
@@ -107,8 +100,6 @@ function readFocus(actor: SpellcastingActorLike): { value: number; max: number }
   return { value: f.value ?? 0, max: f.max };
 }
 
-/** Async glue: build the full spells view from a live actor. Awaits each regular
- *  entry's `getSheetData()`. Rituals + item activations are filled in Slice B. */
 /** Consumables (wands/scrolls) that carry an embedded spell → the Activations
  *  list. Casting goes through `item.consume()` (handles the cast + charge spend). */
 export function mapActivations(items: ActivationItemLike[]): ActivationView[] {
@@ -127,6 +118,8 @@ export function mapActivations(items: ActivationItemLike[]): ActivationView[] {
     }));
 }
 
+/** Async glue: build the full spells view from a live actor. Awaits each regular
+ *  entry's `getSheetData()`. Rituals + item activations are filled alongside. */
 export async function buildSpellsView(actor: SpellcastingActorLike): Promise<SpellsView> {
   const focus = readFocus(actor);
   const entries: SpellEntryView[] = [];
@@ -143,71 +136,4 @@ export async function buildSpellsView(actor: SpellcastingActorLike): Promise<Spe
     if (data) entries.push(mapSpellcastingEntry(data as SpellcastingSheetDataLike, focus));
   }
   return { entries, ritualRanks, activations: mapActivations(actor.itemTypes?.consumable ?? []), focus };
-}
-
-function formatArea(area: { type?: string; value?: number }): string {
-  const parts = [area.value ? `${area.value}-foot` : "", area.type ?? ""].filter(Boolean);
-  return parts.join(" ") || "—";
-}
-
-/** Pure: build the spell tap-for-info detail (rank, traits, cast/range/area/save,
- *  description). Defensive over PF2e's spell.system shape. */
-export function buildSpellDetail(s: SpellDetailLike): SpellDetailView {
-  const sys = s.system ?? {};
-  const rarity = sys.traits?.rarity;
-  const traits = [
-    ...(rarity && rarity !== "common" ? [rarity] : []),
-    ...(sys.traits?.traditions ?? []),
-    ...(sys.traits?.value ?? []),
-  ];
-  const meta: { label: string; value: string }[] = [];
-  if (sys.time?.value) meta.push({ label: "Cast", value: sys.time.value });
-  if (sys.range?.value) meta.push({ label: "Range", value: sys.range.value });
-  if (sys.area) meta.push({ label: "Area", value: formatArea(sys.area) });
-  if (sys.target?.value) meta.push({ label: "Targets", value: sys.target.value });
-  if (sys.duration?.value) meta.push({ label: "Duration", value: sys.duration.value });
-  const save = sys.defense?.save;
-  if (save?.statistic) meta.push({ label: "Defense", value: `${save.basic ? "basic " : ""}${save.statistic}` });
-  return {
-    name: s.name,
-    img: s.img,
-    rank: sys.level?.value ?? 1,
-    glyph: spellGlyph(sys.time?.value),
-    traits,
-    meta,
-    descriptionHtml: sys.description?.value ?? "",
-  };
-}
-
-/** Pure: build the spellbook editor view. Prepared casters get slots (to fill from
- *  `prepList`); spontaneous casters get their repertoire (to manage). */
-export function buildSpellbookView(d: SpellcastingSheetDataLike, book: SpellbookSourceLike[] = []): SpellbookView {
-  const kind: "prepared" | "spontaneous" = d.isPrepared ? "prepared" : "spontaneous";
-  const ranks: SpellbookRankView[] = d.groups.map((g) => {
-    const rank = rankNumber(g.id);
-    if (d.isPrepared) {
-      const slots: SpellbookSlotView[] = g.active.map((a, i) => ({
-        slotIndex: i,
-        spell: a ? { id: a.spell.id, name: a.spell.name, glyph: spellGlyph(a.spell.system?.time?.value) } : null,
-      }));
-      // Available to prepare = the entry's collection (the "book"), matched to the
-      // slot group: cantrips group → cantrip spells; a rank-N group → non-cantrip
-      // spells of rank N. (getSheetData().prepList is null in PF2e v8.2 — verified
-      // live against Ezren — so we read the book directly.)
-      const known: SpellbookOptionView[] = book
-        .filter((b) => (g.id === "cantrips" ? !!b.isCantrip : !b.isCantrip && Number(b.rank) === rank))
-        .map((b) => ({ id: b.id, name: b.name, glyph: spellGlyph(b.system?.time?.value) }));
-      return { id: String(g.id), rank, label: g.label, slots, known };
-    }
-    const known: SpellbookOptionView[] = g.active
-      .filter((a): a is ActiveSpellLike => a != null)
-      .map((a) => ({
-        id: a.spell.id,
-        name: a.spell.name,
-        glyph: spellGlyph(a.spell.system?.time?.value),
-        signature: a.signature ?? false,
-      }));
-    return { id: String(g.id), rank, label: g.label, slots: [], known };
-  });
-  return { entryId: d.id, kind, ranks };
 }
