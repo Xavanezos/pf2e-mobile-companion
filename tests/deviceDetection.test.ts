@@ -26,6 +26,10 @@ describe("isMobileDevice", () => {
     expect(isMobileDevice({ ua: IPHONE_UA, maxTouchPoints: 5 })).toBe(true));
   it("true for a modern iPad (Macintosh UA + multi-touch)", () =>
     expect(isMobileDevice({ ua: IPAD_UA, maxTouchPoints: 5 })).toBe(true));
+  it("true at the touch-points boundary (Macintosh UA + 2 touch points)", () =>
+    expect(isMobileDevice({ ua: IPAD_UA, maxTouchPoints: 2 })).toBe(true));
+  it("false just below the boundary (Macintosh UA + 1 touch point)", () =>
+    expect(isMobileDevice({ ua: IPAD_UA, maxTouchPoints: 1 })).toBe(false));
   it("false for a MacBook (Macintosh UA, no touchscreen)", () =>
     expect(isMobileDevice({ ua: IPAD_UA, maxTouchPoints: 0 })).toBe(false));
   it("false for a wide desktop", () =>
