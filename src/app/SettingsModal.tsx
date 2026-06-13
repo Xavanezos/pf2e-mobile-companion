@@ -1,15 +1,7 @@
 import { useState } from "react";
 import { Modal } from "./sheet/parts/Modal";
-import {
-  getUiMode, setUiMode, getMapRenderer, setMapRenderer,
-} from "../foundry/settings";
-import type { UiMode, MapRenderer } from "../foundry/mobile";
-
-const UI_MODE_CHOICES: { value: UiMode; label: string }[] = [
-  { value: "auto", label: "Automatic" },
-  { value: "on", label: "Always on" },
-  { value: "off", label: "Always off" },
-];
+import { getMapRenderer, setMapRenderer } from "../foundry/settings";
+import type { MapRenderer } from "../foundry/mobile";
 
 const MAP_RENDERER_CHOICES: { value: MapRenderer; label: string }[] = [
   { value: "canvas", label: "Foundry canvas (full)" },
@@ -52,17 +44,10 @@ function Group<T extends string>({ heading, choices, selected, onSelect }: {
 }
 
 export function SettingsModal({ onClose }: { onClose: () => void }) {
-  const [uiMode, setUiModeState] = useState<UiMode>(getUiMode());
   const [mapRenderer, setMapRendererState] = useState<MapRenderer>(getMapRenderer());
 
   return (
     <Modal title="Settings" onClose={onClose}>
-      <Group
-        heading="Mobile UI mode"
-        choices={UI_MODE_CHOICES}
-        selected={uiMode}
-        onSelect={(value) => { setUiModeState(value); void setUiMode(value); }}
-      />
       <Group
         heading="Battle map renderer"
         choices={MAP_RENDERER_CHOICES}
