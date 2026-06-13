@@ -1,10 +1,6 @@
-import {
-  registerSettings, isMobileActive,
-  getUiMode, setUiMode, getMapRenderer, setMapRenderer,
-} from "./foundry/settings";
+import { registerSettings, isMobileActive } from "./foundry/settings";
 import { applyTakeover, removeTakeover, isTakeoverActive, reconcileMapRenderer } from "./foundry/takeover";
 import { installStrikeRollDialogHook } from "./foundry/actor/strikeActions";
-import { buildModuleControl } from "./foundry/controls/moduleControl";
 
 const MODULE_ID = "pf2e-mobile-companion";
 
@@ -18,21 +14,6 @@ Hooks.once("init", () => {
   );
 });
 
-// Add a module category to the left scene-controls toolbar mirroring the two
-// client settings as radio-style toggle buttons. The stock toolbar is hidden
-// while mobile takeover is active, so these are used from a desktop session.
-Hooks.on("getSceneControlButtons", (controls: Record<string, unknown>) => {
-  controls[MODULE_ID] = buildModuleControl({
-    uiMode: getUiMode(),
-    mapRenderer: getMapRenderer(),
-    onSelectUiMode: (mode) => {
-      void setUiMode(mode).then(() => (ui as any).controls?.render());
-    },
-    onSelectMapRenderer: (value) => {
-      void setMapRenderer(value).then(() => (ui as any).controls?.render());
-    },
-  });
-});
 
 Hooks.once("ready", async () => {
   if (!isMobileActive()) {
