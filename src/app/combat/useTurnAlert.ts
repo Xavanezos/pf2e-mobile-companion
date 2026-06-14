@@ -1,5 +1,6 @@
 import { useCallback, useRef } from "react";
 import { useFoundryHook } from "../useFoundryHook";
+import { getVibrate } from "../../foundry/settings";
 
 const BUZZ_MS = [120, 60, 120]; // short double-buzz pattern
 
@@ -16,6 +17,7 @@ export function useTurnAlert(actorId: string | null): void {
     const currentId: string | null = current?.id ?? null;
     if (currentId === lastCurrentId.current) return; // current combatant unchanged → no buzz
     lastCurrentId.current = currentId;
+    if (!getVibrate()) return;
     if (actorId && current?.actor?.id === actorId) {
       (navigator as any)?.vibrate?.(BUZZ_MS);
     }

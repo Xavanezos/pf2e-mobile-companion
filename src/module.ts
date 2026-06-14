@@ -1,4 +1,6 @@
-import { registerSettings, isMobileActive } from "./foundry/settings";
+import {
+  registerSettings, isMobileActive, getDefaultTab, getFontScale, applyFontScale,
+} from "./foundry/settings";
 import { applyTakeover, reconcileMapRenderer } from "./foundry/takeover";
 import { installStrikeRollDialogHook } from "./foundry/actor/strikeActions";
 
@@ -28,6 +30,11 @@ async function mountApp(container: HTMLElement): Promise<void> {
   const { createElement } = await import("react");
   const { createRoot } = await import("react-dom/client");
   const { App } = await import("./app/App");
+  const { useAppStore, coerceTabId } = await import("./app/store");
+
+  useAppStore.getState().setActiveTab(coerceTabId(getDefaultTab()));
+  applyFontScale(getFontScale());
+
   createRoot(container).render(createElement(App));
 }
 
