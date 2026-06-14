@@ -7,6 +7,8 @@ import { useChatFeed } from "./chat/useChatFeed";
 import { ChatToast } from "./chat/ChatToast";
 import { useTurnAlert } from "./combat/useTurnAlert";
 import { SettingsModal } from "./SettingsModal";
+import { useConnectionStatus } from "./useConnectionStatus";
+import { ReconnectionOverlay } from "./ReconnectionOverlay";
 
 export function Shell() {
   const { isFullscreen, toggle } = useFullscreen();
@@ -14,6 +16,7 @@ export function Shell() {
   const actorId = useAppStore((s) => s.actorId);
   useChatFeed();
   useTurnAlert(actorId);
+  const connected = useConnectionStatus();
   const title = actorId
     ? ((game as any).actors.get(actorId)?.name ?? "PF2e Mobile")
     : "PF2e Mobile";
@@ -50,6 +53,7 @@ export function Shell() {
       </main>
       <TabBar />
       <ChatToast />
+      {!connected && <ReconnectionOverlay />}
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
     </div>
   );
