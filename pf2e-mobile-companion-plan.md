@@ -17,7 +17,7 @@ Remaining work, by bucket:
 - **A — In-flight:** land the uncommitted Map bug-fix round (door toggle + `control.ts`, canvas-mode targeting, drag-start origin). Tests green; needs one device pass, then commit.
 - **B — Play-test backlog (code-complete, unblessed):** battle map (ruler / hex grid / padded scene / GM-vs-AC), journals (only empty-state seen), map token conditions/effects, chat-roll long-press menu (reroll/delete), device-only activation.
 - **C — Deferred features (optional):** common-actions row (`game.pf2e.actions`); damage-apply buttons on chat cards (may already work via rendered HTML — live-check); learn/add spells from the compendium.
-- **D — Phase 8 hardening (only to publish):** reconnection overlay on screen-lock, debounce `updateToken` in big combats, `React.lazy` tab split, profile on real Android, settings polish (default tab / vibration / font size), tighten `module.json` pinning, GitHub release + manifest URL.
+- **D — Phase 8 hardening:** debounce, reconnection overlay, settings (default tab / vibration / font size), and pf2e version pinning **done 2026-06-14** (code-split dropped — see the Phase 8 section). Remaining with the user: profiling on a real Android device + the optional GitHub release.
 - **E — Descoped:** Phase 8b module neutralization — unnecessary now the canvas renders.
 
 > Per-phase specs, plans, and reports were archived to `docs/archive/` on 2026-06-13; this file is the living roadmap.
@@ -173,13 +173,15 @@ Custom renderer, not the PIXI canvas. Goal: situational awareness + moving your 
 
 ## Phase 8 — Performance, polish, hardening
 
-- [ ] Profile on a real mid-range Android phone with your actual campaign world. Watch: initial world download size, JS heap, jank during chat spam.
-- [ ] Code-split tabs (React.lazy) so the sheet loads fast even if the map renderer is heavy.
-- [ ] Debounce hook-driven store updates (combat with many tokens fires a lot of `updateToken`).
-- [ ] Reconnection handling: Foundry disconnects on screen lock; detect `disconnected` state and show a "reconnecting" overlay instead of a dead UI. Test screen-off → screen-on flow.
-- [ ] Settings: force mobile on/off, default tab, vibration toggle, font size.
-- [ ] Version pinning: set `relationships.systems` (pf2e min/max) and core `compatibility` in module.json. PF2e's internal API churns — every system update, smoke-test rolls/strikes/spells.
-- [ ] Optional: release on GitHub with a manifest URL so your players auto-update; consider publishing to the Foundry package list later (the niche genuinely exists, as you noticed).
+> **Hardening + settings + pinning done (2026-06-14)** — code-complete on `main`, 264 tests + typecheck + prod build green, 7 commits. Spec: `docs/superpowers/specs/2026-06-14-phase-8-hardening-polish-design.md` · Plan: `docs/superpowers/plans/2026-06-14-phase-8-hardening-polish.md`. Code-split was dropped (the build is a single inlined `module.js` and the Map tab reuses the live canvas, so the original rationale is gone); the "force mobile on/off" setting stays removed (device-only activation). Profiling on a real device and the optional GitHub release stay with the user. Pending device play-test.
+
+- [ ] Profile on a real mid-range Android phone with your actual campaign world. Watch: initial world download size, JS heap, jank during chat spam. *(your device — not automatable here)*
+- [ ] ~~Code-split tabs (React.lazy)~~ — **dropped**: the build is one inlined `module.js` and the Map tab reuses Foundry's live canvas, so there's no heavy bundle to defer.
+- [x] Debounce hook-driven store updates — `useBatchedRefresh` coalesces the `useScene`/`useEncounter` re-preps into one `requestAnimationFrame` per burst of `updateToken`/combat hooks.
+- [x] Reconnection handling — `useConnectionStatus` watches the socket's `connect`/`disconnect`; `ReconnectionOverlay` (in `Shell`) shows a scrim with a Reload escape hatch while down and clears itself on reconnect.
+- [x] Settings — default tab, vibration toggle, and font size as client settings in the cogwheel `SettingsModal`. *(force mobile on/off stays removed — device-only activation.)*
+- [x] Version pinning — pf2e `verified: "8.2.0"` recorded in `module.json` (core was already pinned at `14`/`14`); no hard `maximum`. Smoke-test rolls/strikes/spells after each pf2e update.
+- [ ] Optional: release on GitHub with a manifest URL so your players auto-update; consider publishing to the Foundry package list later. *(your call)*
 
 ---
 
