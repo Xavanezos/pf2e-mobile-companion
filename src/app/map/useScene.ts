@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useReducer } from "react";
+import { useMemo } from "react";
 import { useFoundryHook } from "../useFoundryHook";
+import { useBatchedRefresh } from "../useBatchedRefresh";
 import { buildSceneView } from "../../foundry/scene/view";
 import type { SceneView } from "../../foundry/scene/types";
 
@@ -9,21 +10,20 @@ import type { SceneView } from "../../foundry/scene/types";
  *  no active scene → the tab's empty state. Reads `scene.dimensions` (canvas-free)
  *  and the current combatant's token id (for the turn ring) from live globals. */
 export function useScene(actorId: string | null): SceneView | null {
-  const [version, bump] = useReducer((n: number) => n + 1, 0);
-  const onChange = useCallback(() => bump(), []);
+  const [version, requestRefresh] = useBatchedRefresh();
 
-  useFoundryHook("updateToken", onChange);
-  useFoundryHook("createToken", onChange);
-  useFoundryHook("deleteToken", onChange);
-  useFoundryHook("updateScene", onChange);
-  useFoundryHook("createScene", onChange);
-  useFoundryHook("deleteScene", onChange);
-  useFoundryHook("updateActor", onChange);
-  useFoundryHook("createItem", onChange);
-  useFoundryHook("updateItem", onChange);
-  useFoundryHook("deleteItem", onChange);
-  useFoundryHook("updateCombat", onChange);
-  useFoundryHook("targetToken", onChange);
+  useFoundryHook("updateToken", requestRefresh);
+  useFoundryHook("createToken", requestRefresh);
+  useFoundryHook("deleteToken", requestRefresh);
+  useFoundryHook("updateScene", requestRefresh);
+  useFoundryHook("createScene", requestRefresh);
+  useFoundryHook("deleteScene", requestRefresh);
+  useFoundryHook("updateActor", requestRefresh);
+  useFoundryHook("createItem", requestRefresh);
+  useFoundryHook("updateItem", requestRefresh);
+  useFoundryHook("deleteItem", requestRefresh);
+  useFoundryHook("updateCombat", requestRefresh);
+  useFoundryHook("targetToken", requestRefresh);
 
   return useMemo(() => {
     const scene = (game as any)?.scenes?.active;

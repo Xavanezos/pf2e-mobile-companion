@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useReducer } from "react";
+import { useMemo } from "react";
 import { useFoundryHook } from "../useFoundryHook";
+import { useBatchedRefresh } from "../useBatchedRefresh";
 import { buildEncounterView } from "../../foundry/combat/view";
 import type { EncounterLike, EncounterView } from "../../foundry/combat/types";
 
@@ -8,15 +9,14 @@ import type { EncounterLike, EncounterView } from "../../foundry/combat/types";
  *  turn, roster, and initiative changes reflect within ~1s. Returns null when
  *  there is no active encounter (`game.combat` is null) → the tab's empty state. */
 export function useEncounter(actorId: string | null): EncounterView | null {
-  const [version, bump] = useReducer((n: number) => n + 1, 0);
-  const onCombat = useCallback(() => bump(), []);
+  const [version, requestRefresh] = useBatchedRefresh();
 
-  useFoundryHook("updateCombat", onCombat);
-  useFoundryHook("createCombat", onCombat);
-  useFoundryHook("deleteCombat", onCombat);
-  useFoundryHook("createCombatant", onCombat);
-  useFoundryHook("updateCombatant", onCombat);
-  useFoundryHook("deleteCombatant", onCombat);
+  useFoundryHook("updateCombat", requestRefresh);
+  useFoundryHook("createCombat", requestRefresh);
+  useFoundryHook("deleteCombat", requestRefresh);
+  useFoundryHook("createCombatant", requestRefresh);
+  useFoundryHook("updateCombatant", requestRefresh);
+  useFoundryHook("deleteCombatant", requestRefresh);
 
   return useMemo(() => {
     const combat = (game as any)?.combat as EncounterLike | null | undefined;
