@@ -53,8 +53,7 @@ body.pf2e-mobile-active #hotbar,
 body.pf2e-mobile-active #navigation,
 body.pf2e-mobile-active #players,
 body.pf2e-mobile-active #sidebar,
-body.pf2e-mobile-active #controls,
-body.pf2e-mobile-active #notifications {
+body.pf2e-mobile-active #controls {
   display: none !important;
 }
 
@@ -72,6 +71,35 @@ body.pf2e-mobile-active.pf2e-mobile-map-active #board {
 }
 body.pf2e-mobile-active.pf2e-mobile-map-active #pf2e-mobile-companion-root {
   background: transparent !important;
+}
+
+/* Native Foundry/PF2e dialog windows (roll prompts, target pickers, anything a macro
+   opens) render as body-level popouts beneath our root (z-index 100000): on the
+   transparent Map tab they show through but the root eats the taps, and they keep
+   their desktop size. Lift any framed app window above the root and fit it to the
+   viewport so it's tappable and mobile-sized. The docked chrome we hide above stays
+   hidden — display:none wins regardless of z-index. */
+body.pf2e-mobile-active .application,
+body.pf2e-mobile-active .app.window-app {
+  z-index: 100001 !important;
+  position: fixed !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  max-width: 96vw !important;
+  max-height: 90dvh !important;
+  height: auto !important;
+}
+body.pf2e-mobile-active .application .window-content,
+body.pf2e-mobile-active .app.window-app .window-content {
+  max-height: 78dvh !important;
+  overflow: auto !important;
+}
+
+/* Keep Foundry toasts above the root so errors are visible — notably the macro
+   failures Foundry routes to ui.notifications, which we'd otherwise hide. */
+body.pf2e-mobile-active #notifications {
+  z-index: 100002 !important;
 }
 
 /* PF2e chat cards rendered inside our feed. The markup comes from the system
