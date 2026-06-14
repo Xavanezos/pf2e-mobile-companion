@@ -24,3 +24,18 @@ export type MapRenderer = "canvas" | "lite";
 export function desiredNoCanvas(renderer: MapRenderer): boolean {
   return renderer === "lite";
 }
+
+export type FontScale = "small" | "medium" | "large";
+
+/** Root font-size in px for a scale. The UI is rem-based, so applying this to the
+ *  document root scales the whole app. Unknown values fall back to medium. */
+export function fontScalePx(scale: FontScale): number {
+  switch (scale) {
+    case "small":
+      return 14;
+    case "large":
+      return 18;
+    default:
+      return 16;
+  }
+}
