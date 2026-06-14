@@ -2,14 +2,14 @@
   "id": "pf2e-mobile-companion",
   "title": "PF2e Mobile Companion",
   "description": "Mobile-first React UI for Pathfinder 2e on Foundry VTT (Chrome on Android). Replaces the stock UI on mobile with a purpose-built character sheet, action bar, combat tracker, journals, and lightweight battle map.",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "authors": [{ "name": "Xavanezos" }],
   "url": "https://github.com/Xavanezos/pf2e-mobile-companion",
   "readme": "https://github.com/Xavanezos/pf2e-mobile-companion/blob/main/README.md",
   "bugs": "https://github.com/Xavanezos/pf2e-mobile-companion/issues",
   "license": "MIT",
   "manifest": "https://github.com/Xavanezos/pf2e-mobile-companion/releases/latest/download/module.json",
-  "download": "https://github.com/Xavanezos/pf2e-mobile-companion/releases/download/v1.0.1/module.zip",
+  "download": "https://github.com/Xavanezos/pf2e-mobile-companion/releases/download/v1.1.0/module.zip",
   "compatibility": {
     "minimum": "14",
     "verified": "14"
