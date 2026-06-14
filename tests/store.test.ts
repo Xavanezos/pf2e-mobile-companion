@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { useAppStore } from "../src/app/store";
+import { useAppStore, TAB_IDS, coerceTabId } from "../src/app/store";
 
 describe("useAppStore", () => {
   beforeEach(() => useAppStore.setState({ activeTab: "sheet", actorId: null, sheetSubTab: "vitals" }));
@@ -29,5 +29,16 @@ describe("useAppStore", () => {
   it("switches the sheet sub-tab", () => {
     useAppStore.getState().setSheetSubTab("skills");
     expect(useAppStore.getState().sheetSubTab).toBe("skills");
+  });
+});
+
+describe("coerceTabId", () => {
+  it("passes through every known tab id", () => {
+    for (const id of TAB_IDS) expect(coerceTabId(id)).toBe(id);
+  });
+  it("falls back to the sheet for unknown, null, or undefined", () => {
+    expect(coerceTabId("nope")).toBe("sheet");
+    expect(coerceTabId(null)).toBe("sheet");
+    expect(coerceTabId(undefined)).toBe("sheet");
   });
 });

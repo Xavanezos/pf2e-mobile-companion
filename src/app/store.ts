@@ -1,6 +1,16 @@
 import { create } from "zustand";
 
 export type TabId = "sheet" | "actions" | "combat" | "chat" | "journal" | "map";
+
+export const TAB_IDS: readonly TabId[] = [
+  "sheet", "actions", "combat", "chat", "journal", "map",
+];
+
+/** Narrow an arbitrary stored value to a TabId, defaulting to the sheet. */
+export function coerceTabId(value: unknown): TabId {
+  return TAB_IDS.includes(value as TabId) ? (value as TabId) : "sheet";
+}
+
 export type SheetSubTab = "vitals" | "skills" | "spells" | "items" | "feats" | "profs" | "bio";
 
 export interface AppState {
