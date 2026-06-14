@@ -21,7 +21,7 @@ export function MacroBar({ macros, onRun }: { macros: HotbarView; onRun: (id: st
           title={m.name}
           className={`flex w-16 shrink-0 flex-col items-center gap-1 ${m.canExecute ? "" : "opacity-40"}`}
         >
-          <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-lg bg-zinc-800 ring-1 ring-zinc-700">
+          <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg bg-zinc-800 ring-1 ring-zinc-700">
             {m.img ? (
               <img src={m.img} alt="" className="h-full w-full object-cover" />
             ) : (
