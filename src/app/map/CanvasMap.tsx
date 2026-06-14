@@ -8,7 +8,7 @@ import { panForDrag, panForFocalZoom, clampScale } from "../../foundry/canvas/vi
 import { tokenIdsAtScreenPoint, liveTokenOrigin } from "../../foundry/canvas/hitTest";
 import { moveToken } from "../../foundry/scene/actions";
 import { clearTargets } from "../../foundry/scene/targeting";
-import { releaseControlledTokens, toggleDoorAt } from "../../foundry/canvas/control";
+import { releaseControlledTokens, controlToken, toggleDoorAt } from "../../foundry/canvas/control";
 import { snapToCenter, snapTopLeft, measureDistance, type GridSpec, type Point } from "../../foundry/scene/ruler";
 import { useFoundryHook } from "../useFoundryHook";
 import { liveCanvas, readPan, applyPan, screenCenter, worldAt, screenAt } from "./canvasAccess";
@@ -16,12 +16,14 @@ import { liveCanvas, readPan, applyPan, screenCenter, worldAt, screenAt } from "
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 4;
 const TAP_SLOP = 6;
+const LONG_PRESS_MS = 450; // hold this long without moving → the info/target popup
 
 interface PressState {
   pointerId: number;
   tokenId: string | null;
   x: number; y: number; // press origin (client px)
   moved: boolean;
+  longPressed: boolean; // the long-press timer fired → popup shown, suppress the tap
 }
 
 interface DragState {
@@ -41,9 +43,10 @@ interface DragPreview {
 }
 
 /** The Map tab's canvas renderer: a transparent input layer over Foundry's
- *  `#board`. Gestures drive `canvas.pan`; a tap opens the token info popup
- *  (→ targeting). The canvas itself draws the scene, walls, lighting, fog, and
- *  tokens natively. `useScene` supplies the popup's per-token display data. */
+ *  `#board`. Gestures drive `canvas.pan`; a tap selects a token you control (native
+ *  `Token#control`) or opens the info/target popup for one you don't, and a long-press
+ *  always opens that popup. The canvas itself draws the scene, walls, lighting, fog,
+ *  and tokens natively. `useScene` supplies the popup's per-token display data. */
 export function CanvasMap() {
   useCanvasLifecycle();
   const actorId = useAppStore((s) => s.actorId);
@@ -54,6 +57,7 @@ export function CanvasMap() {
   const anchor = useRef<{ x: number; y: number; dist: number } | null>(null);
   const pressRef = useRef<PressState | null>(null);
   const dragRef = useRef<DragState | null>(null);
+  const longPressRef = useRef<number | null>(null);
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
   const [infoId, setInfoId] = useState<string | null>(null);
   const [rulerMode, setRulerMode] = useState(false);
@@ -104,6 +108,19 @@ export function CanvasMap() {
     const r = viewportRef.current!.getBoundingClientRect();
     return { x: lx + r.left, y: ly + r.top };
   };
+  const cancelLongPress = () => {
+    if (longPressRef.current != null) {
+      clearTimeout(longPressRef.current);
+      longPressRef.current = null;
+    }
+  };
+  // A tap on a token: select it (Token#control) when the viewer can control it,
+  // otherwise open the info/target popup — so tapping an enemy to target it stays a
+  // single tap, while tapping your own / an owned token selects it like a desktop click.
+  const selectOrInfo = (tokenId: string) => {
+    if (view?.tokens.find((t) => t.id === tokenId)?.controllable) controlToken(tokenId);
+    else setInfoId(tokenId);
+  };
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (rulerModeRef.current) {
@@ -125,7 +142,24 @@ export function CanvasMap() {
     // topmost token that's MINE — so I can move my token out from under an enemy.
     const ids = tokenIdsAtScreenPoint(e.clientX, e.clientY);
     const topmost = ids.length ? ids[ids.length - 1] : null;
-    pressRef.current = { pointerId: e.pointerId, tokenId: topmost, x: e.clientX, y: e.clientY, moved: false };
+    pressRef.current = { pointerId: e.pointerId, tokenId: topmost, x: e.clientX, y: e.clientY, moved: false, longPressed: false };
+    // Hold a single finger still on a token → its info/target popup. A move or a
+    // second finger cancels it (onPointerMove / endPointer). Neutralizes any in-flight
+    // drag/pan so the held finger can't also move the token once the popup is up.
+    cancelLongPress();
+    if (topmost && pointers.current.size === 0) {
+      longPressRef.current = window.setTimeout(() => {
+        longPressRef.current = null;
+        const pr = pressRef.current;
+        if (!pr || pr.pointerId !== e.pointerId || pr.moved || pr.longPressed) return;
+        pr.longPressed = true;
+        dragRef.current = null;
+        setDragPreview(null);
+        pointers.current.delete(e.pointerId);
+        anchor.current = pointers.current.size ? gestureState() : null;
+        setInfoId(pr.tokenId);
+      }, LONG_PRESS_MS);
+    }
     const mineId = view
       ? [...ids].reverse().find((id) => view.tokens.find((t) => t.id === id)?.isMine) ?? null
       : null;
@@ -167,7 +201,7 @@ export function CanvasMap() {
     const d = dragRef.current;
     if (d && d.pointerId === e.pointerId) {
       const pr2 = pressRef.current;
-      if (pr2 && !pr2.moved && Math.hypot(e.clientX - pr2.x, e.clientY - pr2.y) > TAP_SLOP) pr2.moved = true;
+      if (pr2 && !pr2.moved && Math.hypot(e.clientX - pr2.x, e.clientY - pr2.y) > TAP_SLOP) { pr2.moved = true; cancelLongPress(); }
       const w = worldAt(e.clientX, e.clientY);
       if (w) {
         const grid = gridSpec();
@@ -184,7 +218,7 @@ export function CanvasMap() {
     }
     const pr = pressRef.current;
     if (pr && pr.pointerId === e.pointerId && !pr.moved) {
-      if (Math.hypot(e.clientX - pr.x, e.clientY - pr.y) > TAP_SLOP) pr.moved = true;
+      if (Math.hypot(e.clientX - pr.x, e.clientY - pr.y) > TAP_SLOP) { pr.moved = true; cancelLongPress(); }
     }
     if (!pointers.current.has(e.pointerId) || !anchor.current) return;
     pointers.current.set(e.pointerId, localPoint(e));
@@ -208,13 +242,15 @@ export function CanvasMap() {
       rulerRef.current = null; // leave the measured line on screen
       return;
     }
+    cancelLongPress();
     const d = dragRef.current;
     if (d && d.pointerId === e.pointerId) {
       const moved = pressRef.current?.moved;
       // Commit at the SNAPPED cell shown by the preview (moveToken re-snaps too).
       if (moved && view) void moveToken(view.id, d.id, d.left, d.top);
-      // A tap on my token (no movement) opens the topmost token's info popup.
-      else if (pressRef.current?.tokenId) setInfoId(pressRef.current.tokenId);
+      // A tap on my token (no movement) selects the topmost token under the press
+      // (or opens its popup when it isn't controllable); a long-press already did.
+      else if (pressRef.current?.tokenId && !pressRef.current.longPressed) selectOrInfo(pressRef.current.tokenId);
       dragRef.current = null;
       setDragPreview(null);
       if (pressRef.current?.pointerId === e.pointerId) pressRef.current = null;
@@ -222,10 +258,10 @@ export function CanvasMap() {
       return; // a real drag is not a tap
     }
     const pr = pressRef.current;
-    const isTap = !!pr && pr.pointerId === e.pointerId && !pr.moved;
+    const isTap = !!pr && pr.pointerId === e.pointerId && !pr.moved && !pr.longPressed;
     if (isTap) {
       if (pr!.tokenId) {
-        setInfoId(pr!.tokenId); // tap a token → info/target popup
+        selectOrInfo(pr!.tokenId); // tap a token → select it, or open its info/target popup
       } else {
         // Tap on empty space: operate a door under the tap; otherwise mirror
         // Foundry's left-click-empty by releasing the token selection.

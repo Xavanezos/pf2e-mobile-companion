@@ -29,6 +29,7 @@ export interface TokenView {
   scaleX: number;
   scaleY: number;                // Foundry texture.scaleX/scaleY — art zoom within the frame (1 = none)
   isMine: boolean;               // active character owns the actor → draggable
+  controllable: boolean;         // viewer owns the actor (or is GM) → tap selects it (Token#control)
   isCurrent: boolean;            // current combatant's token → turn ring
   targeted: boolean;             // in the user's target set → reticle
   hidden: boolean;               // GM-hidden (only listed for the GM; rendered dimmed)

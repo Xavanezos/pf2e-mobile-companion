@@ -86,6 +86,16 @@ describe("buildSceneView", () => {
     expect(v.tokens[1]).toMatchObject({ isMine: false, isCurrent: false });
   });
 
+  it("flags controllable for tokens the viewer owns, and all tokens for the GM", () => {
+    const owned = token({ id: "mine", actor: { id: "hero", hasPlayerOwner: true, isOwner: true } });
+    const foe = token({ id: "foe", actor: { id: "x", hasPlayerOwner: false, isOwner: false } });
+    // Player: can control the owned token, not the unowned one.
+    const pv = buildSceneView(scene([owned, foe]), DIMS, PLAYER);
+    expect(pv.tokens.map((t) => [t.id, t.controllable])).toEqual([["mine", true], ["foe", false]]);
+    // GM: every token is controllable, even an enemy it doesn't "own".
+    expect(buildSceneView(scene([foe]), DIMS, GM).tokens[0].controllable).toBe(true);
+  });
+
   it("flags targeted tokens from targetedIds", () => {
     const ts = [token({ id: "t1" }), token({ id: "t2" })];
     const v = buildSceneView(scene(ts), DIMS, { ...GM, targetedIds: ["t2"] });

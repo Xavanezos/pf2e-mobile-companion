@@ -19,6 +19,15 @@ export function releaseControlledTokens(): void {
   liveCanvas()?.tokens?.releaseAll?.();
 }
 
+/** Control (select) a token on the active scene — mirrors a desktop left-click on it.
+ *  Single-select (releases any others). Foundry enforces the ownership permission
+ *  itself, so a call on a token the viewer doesn't own simply no-ops. No-op off-canvas
+ *  (lite mode) or when the id isn't on the live scene. Placeable access mirrors
+ *  scene/targeting.ts (the token document's `.object`). */
+export function controlToken(tokenId: string): void {
+  liveCanvas()?.scene?.tokens?.get?.(tokenId)?.object?.control?.({ releaseOthers: true });
+}
+
 export interface DoorHit {
   x: number;
   y: number; // door-control icon position, world (scene) px

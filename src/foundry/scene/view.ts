@@ -29,6 +29,10 @@ export function buildSceneView(
     if (!ctx.isGM && (t.hidden || t.isSecret === true)) continue; // players never see GM-hidden / secret
 
     const isMine = !!t.actor && t.actor.id === ctx.characterActorId;
+    // Controllable = the viewer can drive Token#control on it: any token whose actor
+    // they own, and (for a GM) every token. Broader than isMine, which is only the
+    // active character's own token.
+    const controllable = ctx.isGM || t.actor?.isOwner === true;
     const canSeeHp = ctx.isGM || t.actor?.hasPlayerOwner === true;
     const hpRaw = t.actor?.system?.attributes?.hp;
     const hp =
@@ -58,6 +62,7 @@ export function buildSceneView(
       scaleX: t.texture?.scaleX ?? 1,
       scaleY: t.texture?.scaleY ?? 1,
       isMine,
+      controllable,
       isCurrent: t.id === ctx.currentTokenId,
       targeted: targeted.has(t.id),
       hidden: t.hidden,

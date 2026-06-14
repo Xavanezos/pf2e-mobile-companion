@@ -1,7 +1,43 @@
-import { describe, it, expect } from "vitest";
-import { nearestDoorIndex, type DoorHit } from "../src/foundry/canvas/control";
+import { describe, it, expect, afterEach } from "vitest";
+import { nearestDoorIndex, controlToken, type DoorHit } from "../src/foundry/canvas/control";
 
 const door = (x: number, y: number, visible = true): DoorHit => ({ x, y, visible });
+
+/** Canvas-ready stub: the active scene's token docs expose a `.object` placeable
+ *  whose `control(options)` call we record (mirrors the targeting test's stub). */
+function stubCanvas() {
+  const calls: Array<{ id: string; releaseOthers: boolean }> = [];
+  const mk = (id: string) => ({
+    id,
+    object: { id, control: (opts: { releaseOthers?: boolean } = {}) => calls.push({ id, releaseOthers: !!opts.releaseOthers }) },
+  });
+  const tokens = new Map<string, any>([["a", mk("a")], ["b", mk("b")]]);
+  (globalThis as { canvas?: unknown }).canvas = { ready: true, scene: { tokens: { get: (id: string) => tokens.get(id) } } };
+  return { calls };
+}
+
+afterEach(() => {
+  (globalThis as { canvas?: unknown }).canvas = undefined;
+});
+
+describe("controlToken", () => {
+  it("controls the placeable, releasing others (single-select)", () => {
+    const { calls } = stubCanvas();
+    controlToken("a");
+    expect(calls).toEqual([{ id: "a", releaseOthers: true }]);
+  });
+
+  it("no-ops off-canvas (lite mode) without throwing", () => {
+    (globalThis as { canvas?: unknown }).canvas = undefined;
+    expect(() => controlToken("a")).not.toThrow();
+  });
+
+  it("no-ops for a token id that isn't on the scene", () => {
+    const { calls } = stubCanvas();
+    controlToken("missing");
+    expect(calls).toEqual([]);
+  });
+});
 
 describe("nearestDoorIndex", () => {
   it("returns the nearest door control within the threshold", () => {
