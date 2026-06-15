@@ -61,6 +61,12 @@ body.pf2e-mobile-active {
   overflow: hidden;
 }
 
+/* Dice So Nice's 3-D dice canvas — hidden under the takeover to keep the map a clean
+   tactical board. The roll result still posts to chat. */
+body.pf2e-mobile-active #dice-box-canvas {
+  display: none !important;
+}
+
 /* Map tab: reveal the Foundry canvas only while the Map tab is active. The hide
    rule above is !important, so out-specify it with BOTH body classes. The app
    root (z-index 100000, opaque) goes transparent so the board — which fills the
@@ -73,14 +79,25 @@ body.pf2e-mobile-active.pf2e-mobile-map-active #pf2e-mobile-companion-root {
   background: transparent !important;
 }
 
-/* Native Foundry/PF2e dialog windows (roll prompts, target pickers, anything a macro
-   opens) render as body-level popouts beneath our root (z-index 100000): on the
-   transparent Map tab they show through but the root eats the taps, and they keep
-   their desktop size. Lift any framed app window above the root and fit it to the
-   viewport so it's tappable and mobile-sized. The docked chrome we hide above stays
-   hidden — display:none wins regardless of z-index. */
+/* The transparent Map root reveals #board — but also every OTHER body-level element
+   (module HUDs like Calendaria's clock, the empty Foundry HUD/tooltip layers), which
+   sit at desktop positions and overflow the mobile screen. Hide every body-level
+   child except the board, our root, the dice/tooltip/notification layers, and any
+   surfaced popup, so leaked desktop chrome can't show over the map. */
+body.pf2e-mobile-active.pf2e-mobile-map-active
+  > *:not(#board):not(#pf2e-mobile-companion-root):not(#tooltip):not(#fast-tooltip):not(#notifications):not(.application):not(dialog):not(.pf2e-mc-surfaced) {
+  display: none !important;
+}
+
+/* Foundry popout windows (roll prompts, target pickers, module dialogs) mount inside
+   chrome containers we hide with display:none, so z-index alone can't reveal them.
+   surfacePopups.ts hoists each framed window out to <body> and tags it
+   .pf2e-mc-surfaced; here we lift it above our root (z-index 100000) and fit it to
+   the viewport so it's tappable and mobile-sized. Plain .application also covers any
+   window that already mounts at body level. */
 body.pf2e-mobile-active .application,
-body.pf2e-mobile-active .app.window-app {
+body.pf2e-mobile-active .app.window-app,
+body.pf2e-mobile-active .pf2e-mc-surfaced {
   z-index: 100001 !important;
   position: fixed !important;
   left: 50% !important;
@@ -91,7 +108,8 @@ body.pf2e-mobile-active .app.window-app {
   height: auto !important;
 }
 body.pf2e-mobile-active .application .window-content,
-body.pf2e-mobile-active .app.window-app .window-content {
+body.pf2e-mobile-active .app.window-app .window-content,
+body.pf2e-mobile-active .pf2e-mc-surfaced .window-content {
   max-height: 78dvh !important;
   overflow: auto !important;
 }

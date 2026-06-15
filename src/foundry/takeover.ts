@@ -1,6 +1,8 @@
 import {
   getNoCanvas, setNoCanvas, getMapRenderer, desiredNoCanvas,
 } from "./settings";
+import { installPopupSurfacing } from "./surfacePopups";
+import { installCanvasDeclutter } from "./canvas/lifecycle";
 
 const MODULE_ID = "pf2e-mobile-companion";
 const ROOT_ID = `${MODULE_ID}-root`;
@@ -36,6 +38,8 @@ export async function applyTakeover(
   sessionStorage.removeItem(RELOAD_SENTINEL);
 
   document.body.classList.add(BODY_CLASS);
+  installPopupSurfacing();
+  installCanvasDeclutter();
 
   document.getElementById(ROOT_ID)?.remove();
   const container = document.createElement("div");

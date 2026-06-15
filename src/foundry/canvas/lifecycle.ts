@@ -54,3 +54,30 @@ export function fitActiveScene(): void {
   const scale = Math.min(window.innerWidth / dims.width, window.innerHeight / dims.height);
   cv.pan?.({ x: dims.width / 2, y: dims.height / 2, scale });
 }
+
+// Cosmetic layers hidden on the mobile map so it reads as a clean tactical board.
+// The scene, grid, walls/doors, lighting, vision/fog, tokens, and measured templates
+// stay; weather, drawings, journal notes, and ambient-sound pins go. (Dice So Nice
+// is a separate body-level overlay, hidden via CSS.)
+const COSMETIC_LAYERS = ["weather", "drawings", "notes", "sounds"] as const;
+
+/** Hide the cosmetic layers on the live canvas. No-op when the canvas is off. */
+export function hideCosmeticLayers(): void {
+  const cv = liveCanvas();
+  if (!cv?.ready) return;
+  for (const name of COSMETIC_LAYERS) {
+    const layer = cv[name];
+    if (layer) layer.visible = false;
+  }
+}
+
+let declutterInstalled = false;
+/** Keep the cosmetic layers hidden for the session. A scene change redraws the canvas
+ *  and resets layer visibility, so re-apply on every `canvasReady`. Idempotent; call
+ *  once when the takeover mounts (safe in lite mode — `hideCosmeticLayers` no-ops). */
+export function installCanvasDeclutter(): void {
+  if (declutterInstalled) return;
+  declutterInstalled = true;
+  Hooks.on("canvasReady", () => hideCosmeticLayers());
+  hideCosmeticLayers(); // the canvas may already be ready at install
+}
